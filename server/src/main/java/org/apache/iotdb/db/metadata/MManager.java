@@ -18,6 +18,7 @@
  */
 package org.apache.iotdb.db.metadata;
 
+import org.apache.iotdb.db.concurrent.IoTDBThreadPoolFactory;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.StorageEngine;
@@ -96,12 +97,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -208,8 +208,8 @@ public class MManager {
 
     if (config.isEnableMTreeSnapshot()) {
       timedCreateMTreeSnapshotThread =
-          Executors.newSingleThreadScheduledExecutor(
-              r -> new Thread(r, "timedCreateMTreeSnapshotThread"));
+          IoTDBThreadPoolFactory.newSingleThreadScheduledExecutor("timedCreateMTreeSnapshotThread");
+
       timedCreateMTreeSnapshotThread.scheduleAtFixedRate(
           this::checkMTreeModified,
           MTREE_SNAPSHOT_THREAD_CHECK_TIME,
@@ -439,7 +439,7 @@ public class MManager {
           }
           tagIndex
               .computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>())
-              .computeIfAbsent(entry.getValue(), v -> new CopyOnWriteArraySet<>())
+              .computeIfAbsent(entry.getValue(), v -> Collections.synchronizedSet(new HashSet<>()))
               .add(leafMNode);
         }
       }
@@ -1097,6 +1097,11 @@ public class MManager {
       }
       return node;
     } catch (StorageGroupAlreadySetException e) {
+      if (e.isHasChild()) {
+        // if setStorageGroup failure is because of child, the deviceNode should not be created.
+        // Timeseries can't be create under a deviceNode without storageGroup.
+        throw e;
+      }
       // ignore set storage group concurrently
       node = mtree.getDeviceNodeWithAutoCreating(path, sgLevel);
       if (!(node.left instanceof StorageGroupMNode)) {
@@ -1125,8 +1130,9 @@ public class MManager {
       }
 
       for (MNode mNode : mNodeTemplatePair.left.getChildren().values()) {
-        MeasurementMNode measurementMNode = (MeasurementMNode) mNode;
-        res.add(measurementMNode.getSchema());
+        if (mNode instanceof MeasurementMNode) {
+          res.add(((MeasurementMNode) mNode).getSchema());
+        }
       }
 
       // template
@@ -1268,7 +1274,7 @@ public class MManager {
         for (Entry<String, String> entry : tagsMap.entrySet()) {
           tagIndex
               .computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>())
-              .computeIfAbsent(entry.getValue(), v -> new CopyOnWriteArraySet<>())
+              .computeIfAbsent(entry.getValue(), v -> Collections.synchronizedSet(new HashSet<>()))
               .add(leafMNode);
         }
       }
@@ -1321,7 +1327,7 @@ public class MManager {
         if (beforeValue == null || !beforeValue.equals(value)) {
           tagIndex
               .computeIfAbsent(key, k -> new ConcurrentHashMap<>())
-              .computeIfAbsent(value, v -> new CopyOnWriteArraySet<>())
+              .computeIfAbsent(value, v -> Collections.synchronizedSet(new HashSet<>()))
               .add(leafMNode);
         }
       }
@@ -1395,7 +1401,7 @@ public class MManager {
       for (Entry<String, String> entry : tagsMap.entrySet()) {
         tagIndex
             .computeIfAbsent(entry.getKey(), k -> new ConcurrentHashMap<>())
-            .computeIfAbsent(entry.getValue(), v -> new CopyOnWriteArraySet<>())
+            .computeIfAbsent(entry.getValue(), v -> Collections.synchronizedSet(new HashSet<>()))
             .add(leafMNode);
       }
       return;
@@ -1422,7 +1428,7 @@ public class MManager {
         (key, value) ->
             tagIndex
                 .computeIfAbsent(key, k -> new ConcurrentHashMap<>())
-                .computeIfAbsent(value, v -> new CopyOnWriteArraySet<>())
+                .computeIfAbsent(value, v -> Collections.synchronizedSet(new HashSet<>()))
                 .add(leafMNode));
   }
 
@@ -1582,7 +1588,7 @@ public class MManager {
       }
       tagIndex
           .computeIfAbsent(key, k -> new ConcurrentHashMap<>())
-          .computeIfAbsent(currentValue, k -> new CopyOnWriteArraySet<>())
+          .computeIfAbsent(currentValue, k -> Collections.synchronizedSet(new HashSet<>()))
           .add(leafMNode);
     }
   }
@@ -1653,7 +1659,7 @@ public class MManager {
       }
       tagIndex
           .computeIfAbsent(newKey, k -> new ConcurrentHashMap<>())
-          .computeIfAbsent(value, k -> new CopyOnWriteArraySet<>())
+          .computeIfAbsent(value, k -> Collections.synchronizedSet(new HashSet<>()))
           .add(leafMNode);
     } else if (pair.right.containsKey(oldKey)) {
       // check attribute map
@@ -2038,7 +2044,10 @@ public class MManager {
 
   public void createDeviceTemplate(CreateTemplatePlan plan) throws MetadataException {
     try {
+      checkTemplateSchemaNames(plan.getSchemaNames());
+
       Template template = new Template(plan);
+
       if (templateMap.putIfAbsent(plan.getName(), template) != null) {
         // already have template
         throw new DuplicatedTemplateException(plan.getName());
@@ -2050,6 +2059,20 @@ public class MManager {
       }
     } catch (IOException e) {
       throw new MetadataException(e);
+    }
+  }
+
+  private void checkTemplateSchemaNames(List<String> schemaNames) throws MetadataException {
+    // check schema name.
+    String processedName;
+    for (String schemaName : schemaNames) {
+      processedName = schemaName.trim().toLowerCase(Locale.ENGLISH);
+      if ("time".equals(processedName)
+          || "timestamp".equals(processedName)
+          || (schemaName.contains(".")
+              && !(schemaName.startsWith("\"") && schemaName.endsWith("\"")))) {
+        throw new MetadataException(String.format("%s is an illegal schema name", schemaName));
+      }
     }
   }
 

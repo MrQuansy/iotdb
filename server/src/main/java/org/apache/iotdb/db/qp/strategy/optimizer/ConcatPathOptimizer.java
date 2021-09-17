@@ -30,7 +30,10 @@ import org.apache.iotdb.db.qp.logical.crud.BasicFunctionOperator;
 import org.apache.iotdb.db.qp.logical.crud.FilterOperator;
 import org.apache.iotdb.db.qp.logical.crud.FromOperator;
 import org.apache.iotdb.db.qp.logical.crud.FunctionOperator;
+import org.apache.iotdb.db.qp.logical.crud.InOperator;
+import org.apache.iotdb.db.qp.logical.crud.LikeOperator;
 import org.apache.iotdb.db.qp.logical.crud.QueryOperator;
+import org.apache.iotdb.db.qp.logical.crud.RegexpOperator;
 import org.apache.iotdb.db.qp.logical.crud.SFWOperator;
 import org.apache.iotdb.db.qp.logical.crud.SelectOperator;
 import org.apache.iotdb.db.query.udf.core.context.UDFContext;
@@ -291,14 +294,39 @@ public class ConcatPathOptimizer implements ILogicalOptimizer {
         currentNode.addChildOperator(newInnerNode);
         currentNode = newInnerNode;
       }
-      try {
-        currentNode.addChildOperator(
-            new BasicFunctionOperator(
-                operator.getTokenIntType(),
-                noStarPaths.get(i),
-                ((BasicFunctionOperator) operator).getValue()));
-      } catch (SQLParserException e) {
-        throw new LogicalOptimizeException(e.getMessage());
+      switch (operator.getType()) {
+        case IN:
+          currentNode.addChildOperator(
+              new InOperator(
+                  operator.getTokenIntType(),
+                  noStarPaths.get(i),
+                  ((InOperator) operator).getNot(),
+                  ((InOperator) operator).getValues()));
+          break;
+        case LIKE:
+          currentNode.addChildOperator(
+              new LikeOperator(
+                  operator.getTokenIntType(),
+                  noStarPaths.get(i),
+                  ((LikeOperator) operator).getValue()));
+          break;
+        case REGEXP:
+          currentNode.addChildOperator(
+              new RegexpOperator(
+                  operator.getTokenIntType(),
+                  noStarPaths.get(i),
+                  ((RegexpOperator) operator).getValue()));
+          break;
+        default:
+          try {
+            currentNode.addChildOperator(
+                new BasicFunctionOperator(
+                    operator.getTokenIntType(),
+                    noStarPaths.get(i),
+                    ((BasicFunctionOperator) operator).getValue()));
+          } catch (SQLParserException e) {
+            throw new LogicalOptimizeException(e.getMessage());
+          }
       }
     }
     return filterBinaryTree;
