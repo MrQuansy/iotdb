@@ -1024,6 +1024,11 @@ public class DataRegion {
 
     writeLock("insertTablet");
     try {
+      logger.info(
+          "Insert a tablet, device:{}, timeRange:[{},{}]",
+          insertTabletNode.getDevicePath().getFullPath(),
+          insertTabletNode.getTimes()[0],
+          insertTabletNode.getTimes()[insertTabletNode.getTimes().length - 1]);
       TSStatus[] results = new TSStatus[insertTabletNode.getRowCount()];
       Arrays.fill(results, RpcUtils.SUCCESS_STATUS);
       boolean noFailure = true;
@@ -1073,6 +1078,15 @@ public class DataRegion {
         if (!isSequence && time > lastFlushTime) {
           // insert into unsequence and then start sequence
           if (!IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+
+            if (before != loc) {
+              logger.info(
+                  "Insert unsequence data: device: {}, lastFlushTime: {}, beforeTime: {}, timePartition:{}",
+                  insertTabletNode.getDevicePath().getFullPath(),
+                  lastFlushTime,
+                  before,
+                  beforeTimePartition);
+            }
             noFailure =
                 insertTabletToTsFileProcessor(
                         insertTabletNode, before, loc, false, results, beforeTimePartition)
@@ -1088,6 +1102,16 @@ public class DataRegion {
       if (before < loc
           && (isSequence
               || !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())) {
+
+        if (!isSequence) {
+          // debug for unsequence file
+          logger.info(
+              "Insert unsequence data: device: {}, lastFlushTime: {}, beforeTime: {}, timePartition:{}",
+              insertTabletNode.getDevicePath().getFullPath(),
+              lastFlushTime,
+              before,
+              beforeTimePartition);
+        }
         noFailure =
             insertTabletToTsFileProcessor(
                     insertTabletNode, before, loc, isSequence, results, beforeTimePartition)
