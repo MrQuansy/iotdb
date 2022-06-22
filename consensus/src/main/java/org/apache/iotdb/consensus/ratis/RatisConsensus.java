@@ -181,6 +181,7 @@ class RatisConsensus implements IConsensus {
         if (ex != null) { // local server is not leader
           suggestedLeader = ex.getSuggestedLeader();
         }
+        logger.info("Execute result: {}", localServerReply);
       } catch (IOException e) {
         return failedWrite(new RatisRequestFailedException(e));
       }

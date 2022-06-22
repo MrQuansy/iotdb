@@ -147,6 +147,7 @@ public class RatisClient {
         }
       }
 
+      logger.info("Retry: {}", event.getCause().toString());
       return defaultPolicy.handleAttemptFailure(event);
     }
   }

@@ -106,9 +106,9 @@ public class ApplicationStateMachineProxy extends BaseStateMachine {
 
     // if this server is leader
     // it will first try to obtain applicationRequest from transaction context
+    logger.info("Apply a insert log: log term{}, log index{}", log.getTerm(), log.getIndex());
     if (trx.getClientRequest() != null
         && trx.getClientRequest().getMessage() instanceof RequestMessage) {
-      logger.info("Apply a insert log: log term{}, log index{}", log.getTerm(), log.getIndex());
       RequestMessage requestMessage = (RequestMessage) trx.getClientRequest().getMessage();
       applicationRequest = requestMessage.getActualRequest();
     } else {
