@@ -37,6 +37,7 @@ import org.apache.iotdb.db.mpp.plan.analyze.SchemaValidator;
 import org.apache.iotdb.db.mpp.plan.planner.plan.FragmentInstance;
 import org.apache.iotdb.db.mpp.plan.planner.plan.node.PlanNode;
 import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertNode;
+import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertTabletNode;
 import org.apache.iotdb.mpp.rpc.thrift.TFragmentInstance;
 import org.apache.iotdb.mpp.rpc.thrift.TPlanNode;
 import org.apache.iotdb.mpp.rpc.thrift.TSendFragmentInstanceReq;
@@ -223,6 +224,16 @@ public class FragmentInstanceDispatcherImpl implements IFragInstanceDispatcher {
         boolean hasFailedMeasurement = false;
         if (planNode instanceof InsertNode) {
           InsertNode insertNode = (InsertNode) planNode;
+
+          if (planNode instanceof InsertTabletNode) {
+            InsertTabletNode insertTabletNode = (InsertTabletNode) planNode;
+            logger.info(
+                "A tablet plannode: device:{}, timerange:[{},{}]",
+                insertTabletNode.getDevicePath().getFullPath(),
+                insertTabletNode.getTimes()[0],
+                insertTabletNode.getTimes()[insertTabletNode.getTimes().length - 1]);
+          }
+
           try {
             SchemaValidator.validate(insertNode);
           } catch (SemanticException e) {
