@@ -375,12 +375,10 @@ public class SessionPool {
 
     if (shouldCreate) {
       // create a new one.
-      if (logger.isDebugEnabled()) {
-        if (nodeUrls == null) {
-          logger.debug("Create a new Session {}, {}, {}, {}", host, port, user, password);
-        } else {
-          logger.debug("Create a new redirect Session {}, {}, {}", nodeUrls, user, password);
-        }
+      if (nodeUrls == null) {
+        logger.info("Create a new Session {}, {}", host, port);
+      } else {
+        logger.info("Create a new Session{}", nodeUrls);
       }
 
       session = constructNewSession();
@@ -706,6 +704,7 @@ public class SessionPool {
       List<List<TSDataType>> typesList,
       List<List<Object>> valuesList)
       throws IoTDBConnectionException, StatementExecutionException {
+    logger.info("enableCacheLeader:{}, ip", enableCacheLeader);
     for (int i = 0; i < RETRY; i++) {
       Session session = getSession();
       try {
@@ -1102,6 +1101,7 @@ public class SessionPool {
       List<List<String>> measurementsList,
       List<List<String>> valuesList)
       throws IoTDBConnectionException, StatementExecutionException {
+    logger.info("enableCacheLeader:{}, ip", enableCacheLeader);
     for (int i = 0; i < RETRY; i++) {
       Session session = getSession();
       try {
@@ -2378,6 +2378,11 @@ public class SessionPool {
 
     public SessionPool build() {
       if (nodeUrls == null) {
+        logger.info(
+            "Build a session pool, enableCacheLeader:{}, host:{}, port:{}",
+            enableCacheLeader,
+            host,
+            port);
         return new SessionPool(
             host,
             port,
@@ -2391,6 +2396,8 @@ public class SessionPool {
             enableCacheLeader,
             connectionTimeoutInMs);
       } else {
+        logger.info(
+            "Build a session pool, enableCacheLeader:{}, nodeurls:{}", enableCacheLeader, nodeUrls);
         return new SessionPool(
             nodeUrls,
             user,

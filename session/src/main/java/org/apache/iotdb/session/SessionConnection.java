@@ -98,6 +98,7 @@ public class SessionConnection {
   }
 
   public SessionConnection(Session session, ZoneId zoneId) throws IoTDBConnectionException {
+    logger.info("Init default connection with nodeurls");
     this.session = session;
     this.zoneId = zoneId == null ? ZoneId.systemDefault() : zoneId;
     this.endPointList = SessionUtils.parseSeedNodeUrls(session.nodeUrls);
@@ -164,6 +165,7 @@ public class SessionConnection {
       try {
         session.defaultEndPoint = endPoint;
         init(endPoint);
+        logger.info("Init connection with endpoint:{}", endPoint);
       } catch (IoTDBConnectionException e) {
         if (!reconnect()) {
           logger.error("Cluster has no nodes to connect");
@@ -511,11 +513,13 @@ public class SessionConnection {
       RpcUtils.verifySuccessWithRedirectionForMultiDevices(
           client.insertRecords(request), request.getPrefixPaths());
     } catch (TException e) {
+      logger.info("Fail to connect,e:{}", e.getMessage());
       if (reconnect()) {
         try {
           request.setSessionId(sessionId);
           RpcUtils.verifySuccess(client.insertRecords(request));
         } catch (TException tException) {
+          logger.info("Fail to connect,e:{}", e.getMessage());
           throw new IoTDBConnectionException(tException);
         }
       } else {
@@ -531,11 +535,13 @@ public class SessionConnection {
       RpcUtils.verifySuccessWithRedirectionForMultiDevices(
           client.insertStringRecords(request), request.getPrefixPaths());
     } catch (TException e) {
+      logger.info("Fail to connect,e:{}", e.getMessage());
       if (reconnect()) {
         try {
           request.setSessionId(sessionId);
           RpcUtils.verifySuccess(client.insertStringRecords(request));
         } catch (TException tException) {
+          logger.info("Fail to connect,e:{}", e.getMessage());
           throw new IoTDBConnectionException(tException);
         }
       } else {

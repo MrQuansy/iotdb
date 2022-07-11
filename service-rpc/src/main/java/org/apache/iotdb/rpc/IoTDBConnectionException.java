@@ -33,4 +33,10 @@ public class IoTDBConnectionException extends Exception {
   public IoTDBConnectionException(String message, Throwable cause) {
     super(message, cause);
   }
+
+  public IoTDBConnectionException(String ip, long host) {
+    super(
+        String.format(
+            "Fail to connect to server. Please check server status. ip:%s, port:%d", ip, host));
+  };
 }

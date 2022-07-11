@@ -686,6 +686,7 @@ public class ClientRPCServiceImpl implements IClientRPCServiceWithHandler {
               PARTITION_FETCHER,
               SCHEMA_FETCHER);
 
+      LOGGER.info("insert records execute finished,status:{}", result.status.code);
       return result.status;
     } catch (IoTDBException e) {
       return onIoTDBException(e, OperationType.INSERT_RECORDS, e.getErrorCode());
@@ -969,6 +970,7 @@ public class ClientRPCServiceImpl implements IClientRPCServiceWithHandler {
               PARTITION_FETCHER,
               SCHEMA_FETCHER);
 
+      LOGGER.info("insert records execute finished,status:{}", result.status.code);
       return result.status;
     } catch (IoTDBException e) {
       return onIoTDBException(e, OperationType.INSERT_RECORDS, e.getErrorCode());

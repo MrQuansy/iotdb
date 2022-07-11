@@ -863,6 +863,7 @@ public class Session {
   private void handleRedirection(String deviceId, TEndPoint endpoint)
       throws IoTDBConnectionException {
     if (enableCacheLeader) {
+      logger.info("Update cache leader,endpoint:{}", endpoint);
       AtomicReference<IoTDBConnectionException> exceptionReference = new AtomicReference<>();
       deviceIdToEndpoint.put(deviceId, endpoint);
       SessionConnection connection =
@@ -1030,8 +1031,10 @@ public class Session {
           "deviceIds, times, measurementsList and valuesList's size should be equal");
     }
     if (enableCacheLeader) {
+      logger.info("Insert records with cache leader");
       insertStringRecordsWithLeaderCache(deviceIds, times, measurementsList, valuesList, false);
     } else {
+      logger.info("Insert records without cache leader");
       TSInsertStringRecordsReq request =
           genTSInsertStringRecordsReq(deviceIds, times, measurementsList, valuesList, false);
       try {
@@ -1152,9 +1155,11 @@ public class Session {
           "deviceIds, times, measurementsList and valuesList's size should be equal");
     }
     if (enableCacheLeader) {
+      logger.info("Insert records with cache leader");
       insertRecordsWithLeaderCache(
           deviceIds, times, measurementsList, typesList, valuesList, false);
     } else {
+      logger.info("Insert records without cache leader");
       TSInsertRecordsReq request =
           genTSInsertRecordsReq(deviceIds, times, measurementsList, typesList, valuesList, false);
       try {
@@ -2567,6 +2572,8 @@ public class Session {
       }
 
       if (nodeUrls != null) {
+        logger.info(
+            "Create a session:enableCacheLeader{},nodeurls:{}", enableCacheLeader, nodeUrls);
         Session newSession =
             new Session(
                 nodeUrls,
