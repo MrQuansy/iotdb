@@ -21,7 +21,6 @@ package org.apache.iotdb;
 
 import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
-import org.apache.iotdb.rpc.TSStatusCode;
 import org.apache.iotdb.session.Session;
 import org.apache.iotdb.session.SessionDataSet;
 import org.apache.iotdb.session.SessionDataSet.DataIterator;
@@ -32,7 +31,6 @@ import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.iotdb.tsfile.utils.Binary;
-import org.apache.iotdb.tsfile.utils.BitMap;
 import org.apache.iotdb.tsfile.write.record.Tablet;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 
@@ -43,7 +41,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 @SuppressWarnings("squid:S106")
 public class SessionExample {
@@ -73,20 +70,20 @@ public class SessionExample {
     // set session fetchSize
     session.setFetchSize(10000);
 
-    try {
-      session.setStorageGroup("root.sg1");
-    } catch (StatementExecutionException e) {
-      if (e.getStatusCode() != TSStatusCode.PATH_ALREADY_EXIST_ERROR.getStatusCode()) {
-        throw e;
-      }
-    }
+    //    try {
+    //      session.setStorageGroup("root.sg1");
+    //    } catch (StatementExecutionException e) {
+    //      if (e.getStatusCode() != TSStatusCode.PATH_ALREADY_EXIST_ERROR.getStatusCode()) {
+    //        throw e;
+    //      }
+    //    }
 
     //     createTemplate();
-    createTimeseries();
-    createMultiTimeseries();
-    insertRecord();
+    //    createTimeseries();
+    //    createMultiTimeseries();
+    // insertRecord();
     insertTablet();
-    //    insertTabletWithNullValues();
+    // insertTabletWithNullValues();
     //    insertTablets();
     //    insertRecords();
     //    insertText();
@@ -109,8 +106,8 @@ public class SessionExample {
     // set session fetchSize
     sessionEnableRedirect.setFetchSize(10000);
 
-    insertRecord4Redirect();
-    query4Redirect();
+    //    insertRecord4Redirect();
+    //    query4Redirect();
     sessionEnableRedirect.close();
     session.close();
   }
@@ -252,18 +249,18 @@ public class SessionExample {
     String deviceId = ROOT_SG1_D1;
     List<String> measurements = new ArrayList<>();
     List<TSDataType> types = new ArrayList<>();
-    measurements.add("s1");
     measurements.add("s2");
-    measurements.add("s3");
-    types.add(TSDataType.INT64);
-    types.add(TSDataType.INT64);
-    types.add(TSDataType.INT64);
+    //    measurements.add("s2");
+    //    measurements.add("s3");
+    types.add(TSDataType.INT32);
+    //    types.add(TSDataType.INT64);
+    //    types.add(TSDataType.INT64);
 
-    for (long time = 0; time < 100; time++) {
+    for (long time = 0; time < 1; time++) {
       List<Object> values = new ArrayList<>();
-      values.add(1L);
-      values.add(2L);
-      values.add(3L);
+      values.add(1);
+      //      values.add(2L);
+      //      values.add(3L);
       session.insertRecord(deviceId, time, measurements, types, values);
     }
   }
@@ -384,22 +381,21 @@ public class SessionExample {
     // The schema of measurements of one device
     // only measurementId and data type in MeasurementSchema take effects in Tablet
     List<MeasurementSchema> schemaList = new ArrayList<>();
-    schemaList.add(new MeasurementSchema("s1", TSDataType.INT64));
-    schemaList.add(new MeasurementSchema("s2", TSDataType.INT64));
-    schemaList.add(new MeasurementSchema("s3", TSDataType.INT64));
+    // schemaList.add(new MeasurementSchema("s1", TSDataType.INT64));
+    schemaList.add(new MeasurementSchema("s2", TSDataType.FLOAT));
+    //    schemaList.add(new MeasurementSchema("s3", TSDataType.INT64));
 
     Tablet tablet = new Tablet(ROOT_SG1_D1, schemaList, 100);
 
     // Method 1 to add tablet data
     long timestamp = System.currentTimeMillis();
 
-    for (long row = 0; row < 100; row++) {
+    for (long row = 0; row < 3; row++) {
       int rowIndex = tablet.rowSize++;
       tablet.addTimestamp(rowIndex, timestamp);
-      for (int s = 0; s < 3; s++) {
-        long value = new Random().nextLong();
-        tablet.addValue(schemaList.get(s).getMeasurementId(), rowIndex, value);
-      }
+      //      for (int s = 0; s < 3; s++) {
+      //        long value = new Random().nextLong();
+      tablet.addValue(schemaList.get(0).getMeasurementId(), rowIndex, 1.0f);
       if (tablet.rowSize == tablet.getMaxRowNumber()) {
         session.insertTablet(tablet, true);
         tablet.reset();
@@ -413,26 +409,26 @@ public class SessionExample {
     }
 
     // Method 2 to add tablet data
-    long[] timestamps = tablet.timestamps;
-    Object[] values = tablet.values;
-
-    for (long time = 0; time < 100; time++) {
-      int row = tablet.rowSize++;
-      timestamps[row] = time;
-      for (int i = 0; i < 3; i++) {
-        long[] sensor = (long[]) values[i];
-        sensor[row] = i;
-      }
-      if (tablet.rowSize == tablet.getMaxRowNumber()) {
-        session.insertTablet(tablet, true);
-        tablet.reset();
-      }
-    }
-
-    if (tablet.rowSize != 0) {
-      session.insertTablet(tablet);
-      tablet.reset();
-    }
+    //    long[] timestamps = tablet.timestamps;
+    //    Object[] values = tablet.values;
+    //
+    //    for (long time = 0; time < 100; time++) {
+    //      int row = tablet.rowSize++;
+    //      timestamps[row] = time;
+    //      for (int i = 0; i < 3; i++) {
+    //        long[] sensor = (long[]) values[i];
+    //        sensor[row] = i;
+    //      }
+    //      if (tablet.rowSize == tablet.getMaxRowNumber()) {
+    //        session.insertTablet(tablet, true);
+    //        tablet.reset();
+    //      }
+    //    }
+    //
+    //    if (tablet.rowSize != 0) {
+    //      session.insertTablet(tablet);
+    //      tablet.reset();
+    //    }
   }
 
   private static void insertTabletWithNullValues()
@@ -447,158 +443,194 @@ public class SessionExample {
      */
     // The schema of measurements of one device
     // only measurementId and data type in MeasurementSchema take effects in Tablet
+    //    List<MeasurementSchema> schemaList = new ArrayList<>();
+    //    schemaList.add(new MeasurementSchema("s1", TSDataType.INT64));
+    //    schemaList.add(new MeasurementSchema("s2", TSDataType.INT64));
+    //    schemaList.add(new MeasurementSchema("s3", TSDataType.INT64));
+    //
+    //    Tablet tablet = new Tablet(ROOT_SG1_D1, schemaList, 100);
+    //
+    //
+    //    // Method 1 to add tablet data
+    //    tablet.initBitMaps();
+    //
+    //    long timestamp = System.currentTimeMillis();
+    //    for (long row = 0; row < 100; row++) {
+    //      int rowIndex = tablet.rowSize++;
+    //      tablet.addTimestamp(rowIndex, timestamp);
+    //      for (int s = 0; s < 3; s++) {
+    //        long value = new Random().nextLong();
+    //        // mark null value
+    //        if (row % 3 == s) {
+    //          tablet.bitMaps[s].mark((int) row);
+    //        }
+    //        tablet.addValue(schemaList.get(s).getMeasurementId(), rowIndex, value);
+    //      }
+    //      if (tablet.rowSize == tablet.getMaxRowNumber()) {
+    //        session.insertTablet(tablet, true);
+    //        tablet.reset();
+    //      }
+    //      timestamp++;
+    //    }
+    //
+    //    if (tablet.rowSize != 0) {
+    //      session.insertTablet(tablet);
+    //      tablet.reset();
+    //    }
+    //
+    //    // Method 2 to add tablet data
+    //    long[] timestamps = tablet.timestamps;
+    //    Object[] values = tablet.values;
+    //    BitMap[] bitMaps = new BitMap[schemaList.size()];
+    //    for (int s = 0; s < 3; s++) {
+    //      bitMaps[s] = new BitMap(tablet.getMaxRowNumber());
+    //    }
+    //    tablet.bitMaps = bitMaps;
+    //
+    //    for (long time = 0; time < 100; time++) {
+    //      int row = tablet.rowSize++;
+    //      timestamps[row] = time;
+    //      for (int i = 0; i < 3; i++) {
+    //        long[] sensor = (long[]) values[i];
+    //        // mark null value
+    //        if (row % 3 == i) {
+    //          bitMaps[i].mark(row);
+    //        }
+    //        sensor[row] = i;
+    //      }
+    //      if (tablet.rowSize == tablet.getMaxRowNumber()) {
+    //        session.insertTablet(tablet, true);
+    //        tablet.reset();
+    //      }
+    //    }
+    //
+    //    if (tablet.rowSize != 0) {
+    //      session.insertTablet(tablet);
+    //      tablet.reset();
+    //    }
+    //  }
+    //
+    //  private static void insertTablets() throws IoTDBConnectionException,
+    // StatementExecutionException {
+    //    // The schema of measurements of one device
+    //    // only measurementId and data type in MeasurementSchema take effects in Tablet
+    //    List<MeasurementSchema> schemaList = new ArrayList<>();
+    //    schemaList.add(new MeasurementSchema("s1", TSDataType.INT64));
+    //    schemaList.add(new MeasurementSchema("s2", TSDataType.INT64));
+    //    schemaList.add(new MeasurementSchema("s3", TSDataType.INT64));
+    //
+    //    Tablet tablet1 = new Tablet(ROOT_SG1_D1, schemaList, 100);
+    //    Tablet tablet2 = new Tablet("root.sg1.d2", schemaList, 100);
+    //    Tablet tablet3 = new Tablet("root.sg1.d3", schemaList, 100);
+    //
+    //    Map<String, Tablet> tabletMap = new HashMap<>();
+    //    tabletMap.put(ROOT_SG1_D1, tablet1);
+    //    tabletMap.put("root.sg1.d2", tablet2);
+    //    tabletMap.put("root.sg1.d3", tablet3);
+    //
+    //    // Method 1 to add tablet data
+    //    long timestamp = System.currentTimeMillis();
+    //    for (long row = 0; row < 100; row++) {
+    //      int row1 = tablet1.rowSize++;
+    //      int row2 = tablet2.rowSize++;
+    //      int row3 = tablet3.rowSize++;
+    //      tablet1.addTimestamp(row1, timestamp);
+    //      tablet2.addTimestamp(row2, timestamp);
+    //      tablet3.addTimestamp(row3, timestamp);
+    //      for (int i = 0; i < 3; i++) {
+    //        long value = new Random().nextLong();
+    //        tablet1.addValue(schemaList.get(i).getMeasurementId(), row1, value);
+    //        tablet2.addValue(schemaList.get(i).getMeasurementId(), row2, value);
+    //        tablet3.addValue(schemaList.get(i).getMeasurementId(), row3, value);
+    //      }
+    //      if (tablet1.rowSize == tablet1.getMaxRowNumber()) {
+    //        session.insertTablets(tabletMap, true);
+    //        tablet1.reset();
+    //        tablet2.reset();
+    //        tablet3.reset();
+    //      }
+    //      timestamp++;
+    //    }
+    //
+    //    if (tablet1.rowSize != 0) {
+    //      session.insertTablets(tabletMap, true);
+    //      tablet1.reset();
+    //      tablet2.reset();
+    //      tablet3.reset();
+    //    }
+    //
+    //    // Method 2 to add tablet data
+    //    long[] timestamps1 = tablet1.timestamps;
+    //    Object[] values1 = tablet1.values;
+    //    long[] timestamps2 = tablet2.timestamps;
+    //    Object[] values2 = tablet2.values;
+    //    long[] timestamps3 = tablet3.timestamps;
+    //    Object[] values3 = tablet3.values;
+    //
+    //    for (long time = 0; time < 100; time++) {
+    //      int row1 = tablet1.rowSize++;
+    //      int row2 = tablet2.rowSize++;
+    //      int row3 = tablet3.rowSize++;
+    //      timestamps1[row1] = time;
+    //      timestamps2[row2] = time;
+    //      timestamps3[row3] = time;
+    //      for (int i = 0; i < 3; i++) {
+    //        long[] sensor1 = (long[]) values1[i];
+    //        sensor1[row1] = i;
+    //        long[] sensor2 = (long[]) values2[i];
+    //        sensor2[row2] = i;
+    //        long[] sensor3 = (long[]) values3[i];
+    //        sensor3[row3] = i;
+    //      }
+    //      if (tablet1.rowSize == tablet1.getMaxRowNumber()) {
+    //        session.insertTablets(tabletMap, true);
+    //
+    //        tablet1.reset();
+    //        tablet2.reset();
+    //        tablet3.reset();
+    //      }
+    //    }
+    //
+    //    if (tablet1.rowSize != 0) {
+    //      session.insertTablets(tabletMap, true);
+    //      tablet1.reset();
+    //      tablet2.reset();
+    //      tablet3.reset();
+    //    }
+    //
     List<MeasurementSchema> schemaList = new ArrayList<>();
     schemaList.add(new MeasurementSchema("s1", TSDataType.INT64));
-    schemaList.add(new MeasurementSchema("s2", TSDataType.INT64));
-    schemaList.add(new MeasurementSchema("s3", TSDataType.INT64));
+    schemaList.add(new MeasurementSchema("s2", TSDataType.TEXT));
 
-    Tablet tablet = new Tablet(ROOT_SG1_D1, schemaList, 100);
-
-    // Method 1 to add tablet data
-    tablet.initBitMaps();
-
-    long timestamp = System.currentTimeMillis();
-    for (long row = 0; row < 100; row++) {
+    long timestamp = 0;
+    Tablet tablet = new Tablet("root.sg.d", schemaList);
+    for (long row = 0; row < 3; row++) {
       int rowIndex = tablet.rowSize++;
       tablet.addTimestamp(rowIndex, timestamp);
-      for (int s = 0; s < 3; s++) {
-        long value = new Random().nextLong();
-        // mark null value
-        if (row % 3 == s) {
-          tablet.bitMaps[s].mark((int) row);
-        }
-        tablet.addValue(schemaList.get(s).getMeasurementId(), rowIndex, value);
-      }
-      if (tablet.rowSize == tablet.getMaxRowNumber()) {
-        session.insertTablet(tablet, true);
-        tablet.reset();
-      }
+      tablet.addValue(schemaList.get(0).getMeasurementId(), rowIndex, row * 10 + 1L);
+      tablet.addValue(schemaList.get(1).getMeasurementId(), rowIndex, "123");
+
+      timestamp++;
+    }
+
+    for (long row = 3; row < 5; row++) {
+      int rowIndex = tablet.rowSize++;
+      tablet.addTimestamp(rowIndex, timestamp);
+      tablet.addValue(schemaList.get(0).getMeasurementId(), rowIndex, row * 10 + 1L);
+      tablet.addValue(schemaList.get(1).getMeasurementId(), rowIndex, null);
+
       timestamp++;
     }
 
     if (tablet.rowSize != 0) {
-      session.insertTablet(tablet);
+      session.insertAlignedTablet(tablet);
       tablet.reset();
     }
 
-    // Method 2 to add tablet data
-    long[] timestamps = tablet.timestamps;
-    Object[] values = tablet.values;
-    BitMap[] bitMaps = new BitMap[schemaList.size()];
-    for (int s = 0; s < 3; s++) {
-      bitMaps[s] = new BitMap(tablet.getMaxRowNumber());
-    }
-    tablet.bitMaps = bitMaps;
-
-    for (long time = 0; time < 100; time++) {
-      int row = tablet.rowSize++;
-      timestamps[row] = time;
-      for (int i = 0; i < 3; i++) {
-        long[] sensor = (long[]) values[i];
-        // mark null value
-        if (row % 3 == i) {
-          bitMaps[i].mark(row);
-        }
-        sensor[row] = i;
-      }
-      if (tablet.rowSize == tablet.getMaxRowNumber()) {
-        session.insertTablet(tablet, true);
-        tablet.reset();
-      }
-    }
-
-    if (tablet.rowSize != 0) {
-      session.insertTablet(tablet);
-      tablet.reset();
-    }
-  }
-
-  private static void insertTablets() throws IoTDBConnectionException, StatementExecutionException {
-    // The schema of measurements of one device
-    // only measurementId and data type in MeasurementSchema take effects in Tablet
-    List<MeasurementSchema> schemaList = new ArrayList<>();
-    schemaList.add(new MeasurementSchema("s1", TSDataType.INT64));
-    schemaList.add(new MeasurementSchema("s2", TSDataType.INT64));
-    schemaList.add(new MeasurementSchema("s3", TSDataType.INT64));
-
-    Tablet tablet1 = new Tablet(ROOT_SG1_D1, schemaList, 100);
-    Tablet tablet2 = new Tablet("root.sg1.d2", schemaList, 100);
-    Tablet tablet3 = new Tablet("root.sg1.d3", schemaList, 100);
-
-    Map<String, Tablet> tabletMap = new HashMap<>();
-    tabletMap.put(ROOT_SG1_D1, tablet1);
-    tabletMap.put("root.sg1.d2", tablet2);
-    tabletMap.put("root.sg1.d3", tablet3);
-
-    // Method 1 to add tablet data
-    long timestamp = System.currentTimeMillis();
-    for (long row = 0; row < 100; row++) {
-      int row1 = tablet1.rowSize++;
-      int row2 = tablet2.rowSize++;
-      int row3 = tablet3.rowSize++;
-      tablet1.addTimestamp(row1, timestamp);
-      tablet2.addTimestamp(row2, timestamp);
-      tablet3.addTimestamp(row3, timestamp);
-      for (int i = 0; i < 3; i++) {
-        long value = new Random().nextLong();
-        tablet1.addValue(schemaList.get(i).getMeasurementId(), row1, value);
-        tablet2.addValue(schemaList.get(i).getMeasurementId(), row2, value);
-        tablet3.addValue(schemaList.get(i).getMeasurementId(), row3, value);
-      }
-      if (tablet1.rowSize == tablet1.getMaxRowNumber()) {
-        session.insertTablets(tabletMap, true);
-        tablet1.reset();
-        tablet2.reset();
-        tablet3.reset();
-      }
-      timestamp++;
-    }
-
-    if (tablet1.rowSize != 0) {
-      session.insertTablets(tabletMap, true);
-      tablet1.reset();
-      tablet2.reset();
-      tablet3.reset();
-    }
-
-    // Method 2 to add tablet data
-    long[] timestamps1 = tablet1.timestamps;
-    Object[] values1 = tablet1.values;
-    long[] timestamps2 = tablet2.timestamps;
-    Object[] values2 = tablet2.values;
-    long[] timestamps3 = tablet3.timestamps;
-    Object[] values3 = tablet3.values;
-
-    for (long time = 0; time < 100; time++) {
-      int row1 = tablet1.rowSize++;
-      int row2 = tablet2.rowSize++;
-      int row3 = tablet3.rowSize++;
-      timestamps1[row1] = time;
-      timestamps2[row2] = time;
-      timestamps3[row3] = time;
-      for (int i = 0; i < 3; i++) {
-        long[] sensor1 = (long[]) values1[i];
-        sensor1[row1] = i;
-        long[] sensor2 = (long[]) values2[i];
-        sensor2[row2] = i;
-        long[] sensor3 = (long[]) values3[i];
-        sensor3[row3] = i;
-      }
-      if (tablet1.rowSize == tablet1.getMaxRowNumber()) {
-        session.insertTablets(tabletMap, true);
-
-        tablet1.reset();
-        tablet2.reset();
-        tablet3.reset();
-      }
-    }
-
-    if (tablet1.rowSize != 0) {
-      session.insertTablets(tabletMap, true);
-      tablet1.reset();
-      tablet2.reset();
-      tablet3.reset();
-    }
+    List<String> delete_list = new ArrayList<>();
+    delete_list.add("root.sg.d.s1");
+    delete_list.add("root.sg.d.s2");
+    session.deleteData(delete_list, 0, 5);
   }
 
   /**
