@@ -75,6 +75,12 @@ public class BitMap {
     bits[position / Byte.SIZE] |= BIT_UTIL[position % Byte.SIZE];
   }
 
+  public void mark(int start, int end) {
+    for (int i = start; i <= end; i++) {
+      mark(i);
+    }
+  }
+
   /** mark as 0 at all positions. */
   public void reset() {
     Arrays.fill(bits, (byte) 0);

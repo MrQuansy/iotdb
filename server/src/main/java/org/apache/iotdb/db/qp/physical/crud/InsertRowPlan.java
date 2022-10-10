@@ -23,6 +23,8 @@ import org.apache.iotdb.commons.exception.IllegalPathException;
 import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
+import org.apache.iotdb.db.engine.StorageEngine;
+import org.apache.iotdb.db.engine.storagegroup.ILastFlushTimeManagerV2;
 import org.apache.iotdb.db.exception.metadata.PathNotExistException;
 import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
@@ -67,6 +69,12 @@ public class InsertRowPlan extends InsertPlan implements WALEntryValue {
 
   private List<Object> failedValues;
   private List<PartialPath> paths;
+
+  private boolean isSplitSeqAndUnseq = false;
+
+  public InsertRowPlan seqSubPlan;
+
+  public InsertRowPlan unseqSubPlan;
 
   public InsertRowPlan() {
     super(OperatorType.INSERT);
@@ -808,5 +816,47 @@ public class InsertRowPlan extends InsertPlan implements WALEntryValue {
         throw new QueryProcessException("Values contain null: " + Arrays.toString(values));
       }
     }
+  }
+
+  public void determineSeqAndUnseq(ILastFlushTimeManagerV2 flushTimeManager) {
+    // todo for aligned
+    isSplitSeqAndUnseq = true;
+    long[] times =
+        flushTimeManager.getSeriesFlushedTime(
+            StorageEngine.getTimePartition(time), devicePath.getFullPath(), measurements);
+    List<Integer> seqMeasurements = new ArrayList<>();
+    List<Integer> unseqMeasurements = new ArrayList<>();
+
+    for (int i = 0; i < times.length; i++) {
+      if (time >= times[i]) {
+        unseqMeasurements.add(i);
+      } else {
+        seqMeasurements.add(i);
+      }
+    }
+
+    if (!seqMeasurements.isEmpty()) {
+      seqSubPlan = constructSubPlan(seqMeasurements);
+    }
+
+    if (!unseqMeasurements.isEmpty()) {
+      unseqSubPlan = constructSubPlan(unseqMeasurements);
+    }
+  }
+
+  private InsertRowPlan constructSubPlan(List<Integer> subMeasurements) {
+    InsertRowPlan plan = new InsertRowPlan();
+    plan.time = time;
+    plan.measurements = new String[subMeasurements.size()];
+    plan.measurementMNodes = new IMeasurementMNode[subMeasurements.size()];
+    plan.values = new Object[subMeasurements.size()];
+    for (int i = 0; i < subMeasurements.size(); i++) {
+      int index = subMeasurements.get(i);
+      plan.measurements[i] = measurements[index];
+      plan.measurementMNodes[i] = measurementMNodes[index];
+      plan.values[i] = values[index];
+    }
+
+    return plan;
   }
 }

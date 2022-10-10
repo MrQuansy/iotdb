@@ -20,6 +20,8 @@ package org.apache.iotdb.db.qp.physical.crud;
 
 import org.apache.iotdb.commons.exception.IllegalPathException;
 import org.apache.iotdb.commons.path.PartialPath;
+import org.apache.iotdb.db.engine.StorageEngine;
+import org.apache.iotdb.db.engine.storagegroup.ILastFlushTimeManagerV2;
 import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.qp.logical.Operator.OperatorType;
 import org.apache.iotdb.db.utils.QueryDataSetUtils;
@@ -72,6 +74,12 @@ public class InsertTabletPlan extends InsertPlan implements WALEntryValue {
   private List<Integer> range;
 
   private List<Object> failedColumns;
+
+  private boolean isSplitSeqAndUnseq = false;
+
+  public InsertTabletPlan seqSubPlan;
+
+  public InsertTabletPlan unseqSubPlan;
 
   public InsertTabletPlan() {
     super(OperatorType.BATCH_INSERT);
@@ -889,6 +897,60 @@ public class InsertTabletPlan extends InsertPlan implements WALEntryValue {
     for (Object value : columns) {
       if (value == null) {
         throw new QueryProcessException("Columns contain null: " + Arrays.toString(columns));
+      }
+    }
+  }
+
+  public void determineSeqAndUnseq(ILastFlushTimeManagerV2 flushTimeManager) {
+    isSplitSeqAndUnseq = true;
+    long[] times =
+        flushTimeManager.getSeriesFlushedTime(
+            StorageEngine.getTimePartition(this.times[0]), devicePath.getFullPath(), measurements);
+
+    int[] watermarks = new int[measurements.length];
+    boolean hasSequence = false;
+    boolean hasUnsequence = false;
+
+    for (int i = 0; i < measurements.length; i++) {
+      int j;
+      for (j = 0; j < this.times.length; j++) {
+        if (this.times[j] > times[i]) {
+          watermarks[i] = j;
+          hasSequence = true;
+          hasUnsequence |= (j != 0);
+          break;
+        }
+      }
+      if (j == this.times.length) {
+        watermarks[i] = j;
+      }
+    }
+
+    if (hasSequence) {
+      seqSubPlan = new InsertTabletPlan();
+      seqSubPlan.measurements = measurements;
+      seqSubPlan.times = times;
+      seqSubPlan.measurementMNodes = measurementMNodes;
+      seqSubPlan.dataTypes = dataTypes;
+      seqSubPlan.columns = columns;
+
+      seqSubPlan.bitMaps = bitMaps.clone();
+      for (int i = 0; i < watermarks[i]; i++) {
+        seqSubPlan.bitMaps[i].mark(0, watermarks[i] - 1);
+      }
+    }
+
+    if (hasUnsequence) {
+      unseqSubPlan = new InsertTabletPlan();
+      unseqSubPlan.measurements = measurements;
+      unseqSubPlan.times = times;
+      unseqSubPlan.measurementMNodes = measurementMNodes;
+      unseqSubPlan.dataTypes = dataTypes;
+      unseqSubPlan.columns = columns;
+
+      unseqSubPlan.bitMaps = bitMaps.clone();
+      for (int i = 0; i < watermarks[i]; i++) {
+        unseqSubPlan.bitMaps[i].mark(watermarks[i], times.length - 1);
       }
     }
   }

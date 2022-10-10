@@ -67,18 +67,13 @@ import org.apache.iotdb.db.exception.query.OutOfTTLException;
 import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.metadata.cache.DataNodeSchemaCache;
 import org.apache.iotdb.db.metadata.idtable.IDTable;
-import org.apache.iotdb.db.metadata.idtable.IDTableManager;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
 import org.apache.iotdb.db.mpp.plan.planner.plan.node.PlanNodeId;
 import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.DeleteDataNode;
-import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertMultiTabletsNode;
 import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertRowNode;
-import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertRowsNode;
-import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertRowsOfOneDeviceNode;
 import org.apache.iotdb.db.mpp.plan.planner.plan.node.write.InsertTabletNode;
 import org.apache.iotdb.db.qp.physical.crud.DeletePlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertRowPlan;
-import org.apache.iotdb.db.qp.physical.crud.InsertRowsOfOneDevicePlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertTabletPlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.FileReaderManager;
@@ -261,7 +256,7 @@ public class DataRegion {
   /** flush listeners */
   private List<FlushListener> customFlushListeners = Collections.emptyList();
 
-  private ILastFlushTimeManager lastFlushTimeManager;
+  private ILastFlushTimeManagerV2 lastFlushTimeManager;
 
   /**
    * record the insertWriteLock in SG is being hold by which method, it will be empty string if on
@@ -305,13 +300,14 @@ public class DataRegion {
     }
 
     // if use id table, we use id table flush time manager
-    if (config.isEnableIDTable()) {
-      idTable = IDTableManager.getInstance().getIDTableDirectly(storageGroupName);
-      lastFlushTimeManager = new IDTableFlushTimeManager(idTable);
-    } else {
-      lastFlushTimeManager = new LastFlushTimeManager();
-    }
+    //    if (config.isEnableIDTable()) {
+    //      idTable = IDTableManager.getInstance().getIDTableDirectly(storageGroupName);
+    //      lastFlushTimeManager = new IDTableFlushTimeManager(idTable);
+    //    } else {
+    //      lastFlushTimeManager = new LastFlushTimeManager();
+    //    }
 
+    lastFlushTimeManager = new LastFlushTimeManagerV2();
     // recover tsfiles unless consensus protocol is ratis and storage engine is not ready
     if (config.isClusterMode()
         && config.getDataRegionConsensusProtocolClass().equals(ConsensusFactory.RatisConsensus)
@@ -860,25 +856,22 @@ public class DataRegion {
       // init map
       long timePartitionId = StorageEngine.getTimePartition(insertRowPlan.getTime());
 
-      lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
+      //      boolean isSequence =
+      //          insertRowPlan.getTime()
+      //              > lastFlushTimeManager.getFlushedTime(
+      //                  timePartitionId, insertRowPlan.getDevicePath().getFullPath());
 
-      boolean isSequence =
-          insertRowPlan.getTime()
-              > lastFlushTimeManager.getFlushedTime(
-                  timePartitionId, insertRowPlan.getDevicePath().getFullPath());
-
+      insertRowPlan.determineSeqAndUnseq(lastFlushTimeManager);
       // is unsequence and user set config to discard out of order data
-      if (!isSequence
-          && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-        return;
-      }
-
-      lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+      //      if (!isSequence
+      //          && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+      //        return;
+      //      }
 
       // fire trigger before insertion
       TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, insertRowPlan);
       // insert to sequence or unSequence file
-      insertToTsFileProcessor(insertRowPlan, isSequence, timePartitionId);
+      insertToTsFileProcessor(insertRowPlan, timePartitionId);
       // fire trigger after insertion
       TriggerEngine.fire(TriggerEvent.AFTER_INSERT, insertRowPlan);
     } finally {
@@ -892,45 +885,46 @@ public class DataRegion {
    *
    * @param insertRowNode one row of data
    */
-  public void insert(InsertRowNode insertRowNode)
-      throws WriteProcessException, TriggerExecutionException {
-    // reject insertions that are out of ttl
-    if (!isAlive(insertRowNode.getTime())) {
-      throw new OutOfTTLException(insertRowNode.getTime(), (System.currentTimeMillis() - dataTTL));
-    }
-    if (enableMemControl) {
-      StorageEngineV2.blockInsertionIfReject(null);
-    }
-    writeLock("InsertRow");
-    try {
-      // init map
-      long timePartitionId = StorageEngineV2.getTimePartition(insertRowNode.getTime());
-
-      lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
-
-      boolean isSequence =
-          insertRowNode.getTime()
-              > lastFlushTimeManager.getFlushedTime(
-                  timePartitionId, insertRowNode.getDevicePath().getFullPath());
-
-      // is unsequence and user set config to discard out of order data
-      if (!isSequence
-          && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-        return;
-      }
-
-      lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
-
-      // fire trigger before insertion
-      // TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, insertRowNode);
-      // insert to sequence or unSequence file
-      insertToTsFileProcessor(insertRowNode, isSequence, timePartitionId);
-      // fire trigger after insertion
-      // TriggerEngine.fire(TriggerEvent.AFTER_INSERT, insertRowNode);
-    } finally {
-      writeUnlock();
-    }
-  }
+  //  public void insert(InsertRowNode insertRowNode)
+  //      throws WriteProcessException, TriggerExecutionException {
+  //    // reject insertions that are out of ttl
+  //    if (!isAlive(insertRowNode.getTime())) {
+  //      throw new OutOfTTLException(insertRowNode.getTime(), (System.currentTimeMillis() -
+  // dataTTL));
+  //    }
+  //    if (enableMemControl) {
+  //      StorageEngineV2.blockInsertionIfReject(null);
+  //    }
+  //    writeLock("InsertRow");
+  //    try {
+  //      // init map
+  //      long timePartitionId = StorageEngineV2.getTimePartition(insertRowNode.getTime());
+  //
+  //      lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
+  //
+  //      boolean isSequence =
+  //          insertRowNode.getTime()
+  //              > lastFlushTimeManager.getFlushedTime(
+  //                  timePartitionId, insertRowNode.getDevicePath().getFullPath());
+  //
+  //      // is unsequence and user set config to discard out of order data
+  //      if (!isSequence
+  //          && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+  //        return;
+  //      }
+  //
+  //      lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+  //
+  //      // fire trigger before insertion
+  //      // TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, insertRowNode);
+  //      // insert to sequence or unSequence file
+  //      insertToTsFileProcessor(insertRowNode, isSequence, timePartitionId);
+  //      // fire trigger after insertion
+  //      // TriggerEngine.fire(TriggerEvent.AFTER_INSERT, insertRowNode);
+  //    } finally {
+  //      writeUnlock();
+  //    }
+  //  }
 
   /**
    * Insert a tablet (rows belonging to the same devices) into this storage group.
@@ -980,65 +974,78 @@ public class DataRegion {
       long beforeTimePartition =
           StorageEngine.getTimePartition(insertTabletPlan.getTimes()[before]);
       // init map
-      long lastFlushTime =
-          lastFlushTimeManager.ensureFlushedTimePartitionAndInit(
-              beforeTimePartition, insertTabletPlan.getDevicePath().getFullPath(), Long.MIN_VALUE);
-      // if is sequence
-      boolean isSequence = false;
-      while (loc < insertTabletPlan.getRowCount()) {
-        long time = insertTabletPlan.getTimes()[loc];
-        long curTimePartition = StorageEngine.getTimePartition(time);
-        // start next partition
-        if (curTimePartition != beforeTimePartition) {
-          // insert last time partition
-          if (isSequence
-              || !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-            noFailure =
-                insertTabletToTsFileProcessor(
-                        insertTabletPlan, before, loc, isSequence, results, beforeTimePartition)
-                    && noFailure;
-          }
-          // re initialize
-          before = loc;
-          beforeTimePartition = curTimePartition;
-          lastFlushTime =
-              lastFlushTimeManager.ensureFlushedTimePartitionAndInit(
-                  beforeTimePartition,
-                  insertTabletPlan.getDevicePath().getFullPath(),
-                  Long.MIN_VALUE);
+      //      long lastFlushTime =
+      //          lastFlushTimeManager.ensureFlushedTimePartitionAndInit(
+      //              beforeTimePartition, insertTabletPlan.getDevicePath().getFullPath(),
+      // Long.MIN_VALUE);
 
-          isSequence = false;
-        }
-        // still in this partition
-        else {
-          // judge if we should insert sequence
-          if (!isSequence && time > lastFlushTime) {
-            // insert into unsequence and then start sequence
-            if (!IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-              noFailure =
-                  insertTabletToTsFileProcessor(
-                          insertTabletPlan, before, loc, false, results, beforeTimePartition)
-                      && noFailure;
-            }
-            before = loc;
-            isSequence = true;
-          }
-          loc++;
-        }
-      }
+      // todo multiple time partitions
+      //      while (loc < insertTabletPlan.getRowCount()) {
+      //        long time = insertTabletPlan.getTimes()[loc];
+      //        long curTimePartition = StorageEngine.getTimePartition(time);
+      //        // start next partition
+      //        if (curTimePartition != beforeTimePartition) {
+      //          // insert last time partition
+      //          if (isSequence
+      //              || !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())
+      // {
+      //            noFailure =
+      //                insertTabletToTsFileProcessor(
+      //                        insertTabletPlan, before, loc, isSequence, results,
+      // beforeTimePartition)
+      //                    && noFailure;
+      //          }
+      //          // re initialize
+      //          before = loc;
+      //          beforeTimePartition = curTimePartition;
+      //          lastFlushTime =
+      //              lastFlushTimeManager.ensureFlushedTimePartitionAndInit(
+      //                  beforeTimePartition,
+      //                  insertTabletPlan.getDevicePath().getFullPath(),
+      //                  Long.MIN_VALUE);
+      //
+      //          isSequence = false;
+      //        }
+      //        // still in this partition
+      //        else {
+      //          // judge if we should insert sequence
+      //          if (!isSequence && time > lastFlushTime) {
+      //            // insert into unsequence and then start sequence
+      //            if (!IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())
+      // {
+      //              noFailure =
+      //                  insertTabletToTsFileProcessor(
+      //                          insertTabletPlan, before, loc, false, results,
+      // beforeTimePartition)
+      //                      && noFailure;
+      //            }
+      //            before = loc;
+      //            isSequence = true;
+      //          }
+      //          loc++;
+      //        }
+      //      }
 
+      insertTabletPlan.determineSeqAndUnseq(lastFlushTimeManager);
+
+      insertTabletToTsFileProcessor(
+          insertTabletPlan, before, insertTabletPlan.getRowCount(), results, beforeTimePartition);
       // do not forget last part
-      if (before < loc
-          && (isSequence
-              || !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())) {
-        noFailure =
-            insertTabletToTsFileProcessor(
-                    insertTabletPlan, before, loc, isSequence, results, beforeTimePartition)
-                && noFailure;
-      }
-      long globalLatestFlushedTime =
-          lastFlushTimeManager.getGlobalFlushedTime(insertTabletPlan.getDevicePath().getFullPath());
-      tryToUpdateBatchInsertLastCache(insertTabletPlan, globalLatestFlushedTime);
+      //      if (before < loc
+      //          && (isSequence
+      //              ||
+      // !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())) {
+      //        noFailure =
+      //            insertTabletToTsFileProcessor(
+      //                    insertTabletPlan, before, loc, isSequence, results, beforeTimePartition)
+      //                && noFailure;
+      //      }
+
+      // todo update last cache
+      //      long globalLatestFlushedTime =
+      //
+      // lastFlushTimeManager.getGlobalFlushedTime(insertTabletPlan.getDevicePath().getFullPath());
+      //      tryToUpdateBatchInsertLastCache(insertTabletPlan, globalLatestFlushedTime);
 
       if (!noFailure) {
         throw new BatchProcessException(results);
@@ -1051,104 +1058,106 @@ public class DataRegion {
     }
   }
 
-  /**
-   * Insert a tablet (rows belonging to the same devices) into this storage group.
-   *
-   * @throws BatchProcessException if some of the rows failed to be inserted
-   */
-  @SuppressWarnings("squid:S3776") // Suppress high Cognitive Complexity warning
-  public void insertTablet(InsertTabletNode insertTabletNode)
-      throws TriggerExecutionException, BatchProcessException, WriteProcessException {
-    if (enableMemControl) {
-      StorageEngineV2.blockInsertionIfReject(null);
-    }
-    writeLock("insertTablet");
-    try {
-      TSStatus[] results = new TSStatus[insertTabletNode.getRowCount()];
-      Arrays.fill(results, RpcUtils.SUCCESS_STATUS);
-      boolean noFailure = true;
-
-      /*
-       * assume that batch has been sorted by client
-       */
-      int loc = 0;
-      while (loc < insertTabletNode.getRowCount()) {
-        long currTime = insertTabletNode.getTimes()[loc];
-        // skip points that do not satisfy TTL
-        if (!isAlive(currTime)) {
-          results[loc] =
-              RpcUtils.getStatus(
-                  TSStatusCode.OUT_OF_TTL_ERROR,
-                  "time " + currTime + " in current line is out of TTL: " + dataTTL);
-          loc++;
-          noFailure = false;
-        } else {
-          break;
-        }
-      }
-      // loc pointing at first legal position
-      if (loc == insertTabletNode.getRowCount()) {
-        throw new OutOfTTLException(
-            insertTabletNode.getTimes()[insertTabletNode.getTimes().length - 1],
-            (System.currentTimeMillis() - dataTTL));
-      }
-
-      //      TODO(Trigger)// fire trigger before insertion
-      //      final int firePosition = loc;
-      //      TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, insertTabletPlan, firePosition);
-
-      // before is first start point
-      int before = loc;
-      // before time partition
-      long beforeTimePartition =
-          StorageEngineV2.getTimePartition(insertTabletNode.getTimes()[before]);
-      // init map
-      long lastFlushTime =
-          lastFlushTimeManager.ensureFlushedTimePartitionAndInit(
-              beforeTimePartition, insertTabletNode.getDevicePath().getFullPath(), Long.MIN_VALUE);
-      // if is sequence
-      boolean isSequence = false;
-      while (loc < insertTabletNode.getRowCount()) {
-        long time = insertTabletNode.getTimes()[loc];
-        // always in some time partition
-        // judge if we should insert sequence
-        if (!isSequence && time > lastFlushTime) {
-          // insert into unsequence and then start sequence
-          if (!IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-            noFailure =
-                insertTabletToTsFileProcessor(
-                        insertTabletNode, before, loc, false, results, beforeTimePartition)
-                    && noFailure;
-          }
-          before = loc;
-          isSequence = true;
-        }
-        loc++;
-      }
-
-      // do not forget last part
-      if (before < loc
-          && (isSequence
-              || !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())) {
-        noFailure =
-            insertTabletToTsFileProcessor(
-                    insertTabletNode, before, loc, isSequence, results, beforeTimePartition)
-                && noFailure;
-      }
-      long globalLatestFlushedTime =
-          lastFlushTimeManager.getGlobalFlushedTime(insertTabletNode.getDevicePath().getFullPath());
-      tryToUpdateBatchInsertLastCache(insertTabletNode, globalLatestFlushedTime);
-
-      if (!noFailure) {
-        throw new BatchProcessException(results);
-      }
-
-      //      TODO: trigger // fire trigger after insertion
-      //      TriggerEngine.fire(TriggerEvent.AFTER_INSERT, insertTabletPlan, firePosition);
-    } finally {
-      writeUnlock();
-    }
-  }
+  //  /**
+  //   * Insert a tablet (rows belonging to the same devices) into this storage group.
+  //   *
+  //   * @throws BatchProcessException if some of the rows failed to be inserted
+  //   */
+  //  @SuppressWarnings("squid:S3776") // Suppress high Cognitive Complexity warning
+  //  public void insertTablet(InsertTabletNode insertTabletNode)
+  //      throws TriggerExecutionException, BatchProcessException, WriteProcessException {
+  //    if (enableMemControl) {
+  //      StorageEngineV2.blockInsertionIfReject(null);
+  //    }
+  //    writeLock("insertTablet");
+  //    try {
+  //      TSStatus[] results = new TSStatus[insertTabletNode.getRowCount()];
+  //      Arrays.fill(results, RpcUtils.SUCCESS_STATUS);
+  //      boolean noFailure = true;
+  //
+  //      /*
+  //       * assume that batch has been sorted by client
+  //       */
+  //      int loc = 0;
+  //      while (loc < insertTabletNode.getRowCount()) {
+  //        long currTime = insertTabletNode.getTimes()[loc];
+  //        // skip points that do not satisfy TTL
+  //        if (!isAlive(currTime)) {
+  //          results[loc] =
+  //              RpcUtils.getStatus(
+  //                  TSStatusCode.OUT_OF_TTL_ERROR,
+  //                  "time " + currTime + " in current line is out of TTL: " + dataTTL);
+  //          loc++;
+  //          noFailure = false;
+  //        } else {
+  //          break;
+  //        }
+  //      }
+  //      // loc pointing at first legal position
+  //      if (loc == insertTabletNode.getRowCount()) {
+  //        throw new OutOfTTLException(
+  //            insertTabletNode.getTimes()[insertTabletNode.getTimes().length - 1],
+  //            (System.currentTimeMillis() - dataTTL));
+  //      }
+  //
+  //      //      TODO(Trigger)// fire trigger before insertion
+  //      //      final int firePosition = loc;
+  //      //      TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, insertTabletPlan, firePosition);
+  //
+  //      // before is first start point
+  //      int before = loc;
+  //      // before time partition
+  //      long beforeTimePartition =
+  //          StorageEngineV2.getTimePartition(insertTabletNode.getTimes()[before]);
+  //      // init map
+  //      long lastFlushTime =
+  //          lastFlushTimeManager.ensureFlushedTimePartitionAndInit(
+  //              beforeTimePartition, insertTabletNode.getDevicePath().getFullPath(),
+  // Long.MIN_VALUE);
+  //      // if is sequence
+  //      boolean isSequence = false;
+  //      while (loc < insertTabletNode.getRowCount()) {
+  //        long time = insertTabletNode.getTimes()[loc];
+  //        // always in some time partition
+  //        // judge if we should insert sequence
+  //        if (!isSequence && time > lastFlushTime) {
+  //          // insert into unsequence and then start sequence
+  //          if (!IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+  //            noFailure =
+  //                insertTabletToTsFileProcessor(
+  //                        insertTabletNode, before, loc, false, results, beforeTimePartition)
+  //                    && noFailure;
+  //          }
+  //          before = loc;
+  //          isSequence = true;
+  //        }
+  //        loc++;
+  //      }
+  //
+  //      // do not forget last part
+  //      if (before < loc
+  //          && (isSequence
+  //              || !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData())) {
+  //        noFailure =
+  //            insertTabletToTsFileProcessor(
+  //                    insertTabletNode, before, loc, isSequence, results, beforeTimePartition)
+  //                && noFailure;
+  //      }
+  //      long globalLatestFlushedTime =
+  //
+  // lastFlushTimeManager.getGlobalFlushedTime(insertTabletNode.getDevicePath().getFullPath());
+  //      tryToUpdateBatchInsertLastCache(insertTabletNode, globalLatestFlushedTime);
+  //
+  //      if (!noFailure) {
+  //        throw new BatchProcessException(results);
+  //      }
+  //
+  //      //      TODO: trigger // fire trigger after insertion
+  //      //      TriggerEngine.fire(TriggerEvent.AFTER_INSERT, insertTabletPlan, firePosition);
+  //    } finally {
+  //      writeUnlock();
+  //    }
+  //  }
 
   /**
    * Check whether the time falls in TTL.
@@ -1176,7 +1185,6 @@ public class DataRegion {
       InsertTabletPlan insertTabletPlan,
       int start,
       int end,
-      boolean sequence,
       TSStatus[] results,
       long timePartitionId) {
     // return when start >= end
@@ -1184,104 +1192,133 @@ public class DataRegion {
       return true;
     }
 
-    TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, sequence);
-    if (tsFileProcessor == null) {
-      for (int i = start; i < end; i++) {
-        results[i] =
-            RpcUtils.getStatus(
-                TSStatusCode.INTERNAL_SERVER_ERROR,
-                "can not create TsFileProcessor, timePartitionId: " + timePartitionId);
+    if (insertTabletPlan.seqSubPlan != null) {
+      TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, true);
+      if (tsFileProcessor == null) {
+        for (int i = start; i < end; i++) {
+          results[i] =
+              RpcUtils.getStatus(
+                  TSStatusCode.INTERNAL_SERVER_ERROR,
+                  "can not create TsFileProcessor, timePartitionId: " + timePartitionId);
+        }
+        return false;
       }
-      return false;
-    }
+      try {
+        tsFileProcessor.insertTablet(insertTabletPlan.seqSubPlan, start, end, results);
+      } catch (WriteProcessRejectException e) {
+        logger.warn("insert to TsFileProcessor rejected, {}", e.getMessage());
+        return false;
+      } catch (WriteProcessException e) {
+        logger.error("insert to TsFileProcessor error ", e);
+        return false;
+      }
 
-    try {
-      tsFileProcessor.insertTablet(insertTabletPlan, start, end, results);
-    } catch (WriteProcessRejectException e) {
-      logger.warn("insert to TsFileProcessor rejected, {}", e.getMessage());
-      return false;
-    } catch (WriteProcessException e) {
-      logger.error("insert to TsFileProcessor error ", e);
-      return false;
-    }
-
-    lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
-    // try to update the latest time of the device of this tsRecord
-    if (sequence) {
-      lastFlushTimeManager.updateLastTime(
+      lastFlushTimeManager.updateDeviceLastTime(
           timePartitionId,
           insertTabletPlan.getDevicePath().getFullPath(),
           insertTabletPlan.getTimes()[end - 1]);
-    }
 
-    // check memtable size and may async try to flush the work memtable
-    if (tsFileProcessor.shouldFlush()) {
-      fileFlushPolicy.apply(this, tsFileProcessor, sequence);
-    }
-    return true;
-  }
-
-  /**
-   * insert batch to tsfile processor thread-safety that the caller need to guarantee The rows to be
-   * inserted are in the range [start, end) Null value in each column values will be replaced by the
-   * subsequent non-null value, e.g., {1, null, 3, null, 5} will be {1, 3, 5, null, 5}
-   *
-   * @param insertTabletNode insert a tablet of a device
-   * @param sequence whether is sequence
-   * @param start start index of rows to be inserted in insertTabletPlan
-   * @param end end index of rows to be inserted in insertTabletPlan
-   * @param results result array
-   * @param timePartitionId time partition id
-   * @return false if any failure occurs when inserting the tablet, true otherwise
-   */
-  private boolean insertTabletToTsFileProcessor(
-      InsertTabletNode insertTabletNode,
-      int start,
-      int end,
-      boolean sequence,
-      TSStatus[] results,
-      long timePartitionId) {
-    // return when start >= end
-    if (start >= end) {
-      return true;
-    }
-
-    TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, sequence);
-    if (tsFileProcessor == null) {
-      for (int i = start; i < end; i++) {
-        results[i] =
-            RpcUtils.getStatus(
-                TSStatusCode.INTERNAL_SERVER_ERROR,
-                "can not create TsFileProcessor, timePartitionId: " + timePartitionId);
+      // check memtable size and may async try to flush the work memtable
+      if (tsFileProcessor.shouldFlush()) {
+        fileFlushPolicy.apply(this, tsFileProcessor, true);
       }
-      return false;
     }
 
-    try {
-      tsFileProcessor.insertTablet(insertTabletNode, start, end, results);
-    } catch (WriteProcessRejectException e) {
-      logger.warn("insert to TsFileProcessor rejected, {}", e.getMessage());
-      return false;
-    } catch (WriteProcessException e) {
-      logger.error("insert to TsFileProcessor error ", e);
-      return false;
+    if (insertTabletPlan.unseqSubPlan != null) {
+      TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, false);
+      if (tsFileProcessor == null) {
+        for (int i = start; i < end; i++) {
+          results[i] =
+              RpcUtils.getStatus(
+                  TSStatusCode.INTERNAL_SERVER_ERROR,
+                  "can not create TsFileProcessor, timePartitionId: " + timePartitionId);
+        }
+        return false;
+      }
+      try {
+        tsFileProcessor.insertTablet(insertTabletPlan.unseqSubPlan, start, end, results);
+      } catch (WriteProcessRejectException e) {
+        logger.warn("insert to TsFileProcessor rejected, {}", e.getMessage());
+        return false;
+      } catch (WriteProcessException e) {
+        logger.error("insert to TsFileProcessor error ", e);
+        return false;
+      }
+
+      // check memtable size and may async try to flush the work memtable
+      if (tsFileProcessor.shouldFlush()) {
+        fileFlushPolicy.apply(this, tsFileProcessor, false);
+      }
     }
 
-    lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+    //    lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
     // try to update the latest time of the device of this tsRecord
-    if (sequence) {
-      lastFlushTimeManager.updateLastTime(
-          timePartitionId,
-          insertTabletNode.getDevicePath().getFullPath(),
-          insertTabletNode.getTimes()[end - 1]);
-    }
-
-    // check memtable size and may async try to flush the work memtable
-    if (tsFileProcessor.shouldFlush()) {
-      fileFlushPolicy.apply(this, tsFileProcessor, sequence);
-    }
     return true;
   }
+
+  //  /**
+  //   * insert batch to tsfile processor thread-safety that the caller need to guarantee The rows
+  // to be
+  //   * inserted are in the range [start, end) Null value in each column values will be replaced by
+  // the
+  //   * subsequent non-null value, e.g., {1, null, 3, null, 5} will be {1, 3, 5, null, 5}
+  //   *
+  //   * @param insertTabletNode insert a tablet of a device
+  //   * @param sequence whether is sequence
+  //   * @param start start index of rows to be inserted in insertTabletPlan
+  //   * @param end end index of rows to be inserted in insertTabletPlan
+  //   * @param results result array
+  //   * @param timePartitionId time partition id
+  //   * @return false if any failure occurs when inserting the tablet, true otherwise
+  //   */
+  //  private boolean insertTabletToTsFileProcessor(
+  //      InsertTabletNode insertTabletNode,
+  //      int start,
+  //      int end,
+  //      boolean sequence,
+  //      TSStatus[] results,
+  //      long timePartitionId) {
+  //    // return when start >= end
+  //    if (start >= end) {
+  //      return true;
+  //    }
+  //
+  //    TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, sequence);
+  //    if (tsFileProcessor == null) {
+  //      for (int i = start; i < end; i++) {
+  //        results[i] =
+  //            RpcUtils.getStatus(
+  //                TSStatusCode.INTERNAL_SERVER_ERROR,
+  //                "can not create TsFileProcessor, timePartitionId: " + timePartitionId);
+  //      }
+  //      return false;
+  //    }
+  //
+  //    try {
+  //      tsFileProcessor.insertTablet(insertTabletNode, start, end, results);
+  //    } catch (WriteProcessRejectException e) {
+  //      logger.warn("insert to TsFileProcessor rejected, {}", e.getMessage());
+  //      return false;
+  //    } catch (WriteProcessException e) {
+  //      logger.error("insert to TsFileProcessor error ", e);
+  //      return false;
+  //    }
+  //
+  //    lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+  //    // try to update the latest time of the device of this tsRecord
+  //    if (sequence) {
+  //      lastFlushTimeManager.updateLastTime(
+  //          timePartitionId,
+  //          insertTabletNode.getDevicePath().getFullPath(),
+  //          insertTabletNode.getTimes()[end - 1]);
+  //    }
+  //
+  //    // check memtable size and may async try to flush the work memtable
+  //    if (tsFileProcessor.shouldFlush()) {
+  //      fileFlushPolicy.apply(this, tsFileProcessor, sequence);
+  //    }
+  //    return true;
+  //  }
 
   private void tryToUpdateBatchInsertLastCache(InsertTabletPlan plan, Long latestFlushedTime) {
     if (!IoTDBDescriptor.getInstance().getConfig().isLastCacheEnabled()) {
@@ -1326,55 +1363,70 @@ public class DataRegion {
     }
   }
 
-  private void insertToTsFileProcessor(
-      InsertRowPlan insertRowPlan, boolean sequence, long timePartitionId)
+  private void insertToTsFileProcessor(InsertRowPlan insertRowPlan, long timePartitionId)
       throws WriteProcessException {
-    TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, sequence);
-    if (tsFileProcessor == null) {
-      return;
+
+    if (insertRowPlan.seqSubPlan != null) {
+      TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, true);
+      if (tsFileProcessor != null) {
+        tsFileProcessor.insert(insertRowPlan.seqSubPlan);
+      }
+
+      // check memtable size and may asyncTryToFlush the work memtable
+      if (tsFileProcessor.shouldFlush()) {
+        fileFlushPolicy.apply(this, tsFileProcessor, true);
+      }
+
+      // try to update the latest time of the device of this tsRecord
+      lastFlushTimeManager.updateDeviceLastTime(
+          timePartitionId, insertRowPlan.getDevicePath().getFullPath(), insertRowPlan.getTime());
     }
 
-    tsFileProcessor.insert(insertRowPlan);
+    if (insertRowPlan.unseqSubPlan != null
+        && !IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+      TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, false);
+      if (tsFileProcessor != null) {
+        tsFileProcessor.insert(insertRowPlan.unseqSubPlan);
+      }
 
-    // try to update the latest time of the device of this tsRecord
-    lastFlushTimeManager.updateLastTime(
-        timePartitionId, insertRowPlan.getDevicePath().getFullPath(), insertRowPlan.getTime());
-
-    long globalLatestFlushTime =
-        lastFlushTimeManager.getGlobalFlushedTime(insertRowPlan.getDevicePath().getFullPath());
-
-    tryToUpdateInsertLastCache(insertRowPlan, globalLatestFlushTime);
-
-    // check memtable size and may asyncTryToFlush the work memtable
-    if (tsFileProcessor.shouldFlush()) {
-      fileFlushPolicy.apply(this, tsFileProcessor, sequence);
+      // check memtable size and may asyncTryToFlush the work memtable
+      if (tsFileProcessor.shouldFlush()) {
+        fileFlushPolicy.apply(this, tsFileProcessor, false);
+      }
     }
+
+    // todo update last cache
+    //    long globalLatestFlushTime =
+    //
+    // lastFlushTimeManager.getGlobalFlushedTime(insertRowPlan.getDevicePath().getFullPath());
+    //
+    // tryToUpdateInsertLastCache(insertRowPlan, globalLatestFlushTime);
   }
 
-  private void insertToTsFileProcessor(
-      InsertRowNode insertRowNode, boolean sequence, long timePartitionId)
-      throws WriteProcessException {
-    TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, sequence);
-    if (tsFileProcessor == null) {
-      return;
-    }
-
-    tsFileProcessor.insert(insertRowNode);
-
-    // try to update the latest time of the device of this tsRecord
-    lastFlushTimeManager.updateLastTime(
-        timePartitionId, insertRowNode.getDevicePath().getFullPath(), insertRowNode.getTime());
-
-    long globalLatestFlushTime =
-        lastFlushTimeManager.getGlobalFlushedTime(insertRowNode.getDevicePath().getFullPath());
-
-    tryToUpdateInsertLastCache(insertRowNode, globalLatestFlushTime);
-
-    // check memtable size and may asyncTryToFlush the work memtable
-    if (tsFileProcessor.shouldFlush()) {
-      fileFlushPolicy.apply(this, tsFileProcessor, sequence);
-    }
-  }
+  //  private void insertToTsFileProcessor(
+  //      InsertRowNode insertRowNode, boolean sequence, long timePartitionId)
+  //      throws WriteProcessException {
+  //    TsFileProcessor tsFileProcessor = getOrCreateTsFileProcessor(timePartitionId, sequence);
+  //    if (tsFileProcessor == null) {
+  //      return;
+  //    }
+  //
+  //    tsFileProcessor.insert(insertRowNode);
+  //
+  //    // try to update the latest time of the device of this tsRecord
+  //    lastFlushTimeManager.updateLastTime(
+  //        timePartitionId, insertRowNode.getDevicePath().getFullPath(), insertRowNode.getTime());
+  //
+  //    long globalLatestFlushTime =
+  //        lastFlushTimeManager.getGlobalFlushedTime(insertRowNode.getDevicePath().getFullPath());
+  //
+  //    tryToUpdateInsertLastCache(insertRowNode, globalLatestFlushTime);
+  //
+  //    // check memtable size and may asyncTryToFlush the work memtable
+  //    if (tsFileProcessor.shouldFlush()) {
+  //      fileFlushPolicy.apply(this, tsFileProcessor, sequence);
+  //    }
+  //  }
 
   private void tryToUpdateInsertLastCache(InsertRowPlan plan, Long latestFlushedTime) {
     if (!IoTDBDescriptor.getInstance().getConfig().isLastCacheEnabled()) {
@@ -2456,7 +2508,8 @@ public class DataRegion {
     TsFileResource resource = tsFileProcessor.getTsFileResource();
     for (String deviceId : resource.getDevices()) {
       resource.updateEndTime(
-          deviceId, lastFlushTimeManager.getLastTime(tsFileProcessor.getTimeRangeId(), deviceId));
+          deviceId,
+          lastFlushTimeManager.getDeviceLastTime(tsFileProcessor.getTimeRangeId(), deviceId));
     }
   }
 
@@ -2485,24 +2538,25 @@ public class DataRegion {
    * @return true if update latest flush time success
    */
   private boolean updateLatestFlushTimeToPartition(long partitionId, long latestFlushTime) {
-    boolean res =
-        lastFlushTimeManager.updateLatestFlushTimeToPartition(partitionId, latestFlushTime);
-    if (!res) {
-      logger.warn(
-          "Partition: {} does't have latest time for each device. "
-              + "No valid record is written into memtable.  latest flush time is: {}",
-          partitionId,
-          latestFlushTime);
-    }
-
-    return res;
+    //    boolean res =
+    //        lastFlushTimeManager.updateLatestFlushTimeToPartition(partitionId, latestFlushTime);
+    //    if (!res) {
+    //      logger.warn(
+    //          "Partition: {} does't have latest time for each device. "
+    //              + "No valid record is written into memtable.  latest flush time is: {}",
+    //          partitionId,
+    //          latestFlushTime);
+    //    }
+    //
+    //    return res;
+    return true;
   }
 
   /** used for upgrading */
   public void updateNewlyFlushedPartitionLatestFlushedTimeForEachDevice(
       long partitionId, String deviceId, long time) {
-    lastFlushTimeManager.updateNewlyFlushedPartitionLatestFlushedTimeForEachDevice(
-        partitionId, deviceId, time);
+    //    lastFlushTimeManager.updateNewlyFlushedPartitionLatestFlushedTimeForEachDevice(
+    //        partitionId, deviceId, time);
   }
 
   /** put the memtable back to the MemTablePool and make the metadata in writer visible */
@@ -2581,7 +2635,9 @@ public class DataRegion {
         writeUnlock();
       }
       // after upgrade complete, update partitionLatestFlushedTimeForEachDevice
-      lastFlushTimeManager.applyNewlyFlushedTimeToFlushedTime();
+
+      // todo upgrade
+      // lastFlushTimeManager.applyNewlyFlushedTimeToFlushedTime();
     }
   }
 
@@ -3009,9 +3065,9 @@ public class DataRegion {
     for (String device : newTsFileResource.getDevices()) {
       long endTime = newTsFileResource.getEndTime(device);
       long timePartitionId = StorageEngine.getTimePartition(endTime);
-      lastFlushTimeManager.updateLastTime(timePartitionId, device, endTime);
-      lastFlushTimeManager.updateFlushedTime(timePartitionId, device, endTime);
-      lastFlushTimeManager.updateGlobalFlushedTime(device, endTime);
+      lastFlushTimeManager.updateDeviceLastTime(timePartitionId, device, endTime);
+      lastFlushTimeManager.updateDeviceFlushedTime(timePartitionId, device, endTime);
+      lastFlushTimeManager.updateDeviceGlobalFlushedTime(device, endTime);
     }
   }
 
@@ -3464,172 +3520,174 @@ public class DataRegion {
     return tsFileManager;
   }
 
-  /**
-   * insert batch of rows belongs to one device
-   *
-   * @param insertRowsOfOneDevicePlan batch of rows belongs to one device
-   */
-  public void insert(InsertRowsOfOneDevicePlan insertRowsOfOneDevicePlan)
-      throws WriteProcessException, TriggerExecutionException {
-    writeLock("InsertRowsOfOneDevice");
-    try {
-      boolean isSequence = false;
-      InsertRowPlan[] rowPlans = insertRowsOfOneDevicePlan.getRowPlans();
-      for (int i = 0, rowPlansLength = rowPlans.length; i < rowPlansLength; i++) {
+  //  /**
+  //   * insert batch of rows belongs to one device
+  //   *
+  //   * @param insertRowsOfOneDevicePlan batch of rows belongs to one device
+  //   */
+  //  public void insert(InsertRowsOfOneDevicePlan insertRowsOfOneDevicePlan)
+  //      throws WriteProcessException, TriggerExecutionException {
+  //    writeLock("InsertRowsOfOneDevice");
+  //    try {
+  //      boolean isSequence = false;
+  //      InsertRowPlan[] rowPlans = insertRowsOfOneDevicePlan.getRowPlans();
+  //      for (int i = 0, rowPlansLength = rowPlans.length; i < rowPlansLength; i++) {
+  //
+  //        InsertRowPlan plan = rowPlans[i];
+  //        if (!isAlive(plan.getTime()) || insertRowsOfOneDevicePlan.isExecuted(i)) {
+  //          // we do not need to write these part of data, as they can not be queried
+  //          // or the sub-plan has already been executed, we are retrying other sub-plans
+  //          continue;
+  //        }
+  //        // init map
+  //        long timePartitionId = StorageEngine.getTimePartition(plan.getTime());
+  //
+  //        lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
+  //        // as the plans have been ordered, and we have get the write lock,
+  //        // So, if a plan is sequenced, then all the rest plans are sequenced.
+  //        //
+  //        if (!isSequence) {
+  //          isSequence =
+  //              plan.getTime()
+  //                  > lastFlushTimeManager.getFlushedTime(
+  //                      timePartitionId, plan.getDevicePath().getFullPath());
+  //        }
+  //        // is unsequence and user set config to discard out of order data
+  //        if (!isSequence
+  //            && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+  //          return;
+  //        }
+  //
+  //        lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+  //
+  //        // fire trigger before insertion
+  //        TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, plan);
+  //        // insert to sequence or unSequence file
+  //        insertToTsFileProcessor(plan, isSequence, timePartitionId);
+  //        // fire trigger before insertion
+  //        TriggerEngine.fire(TriggerEvent.AFTER_INSERT, plan);
+  //      }
+  //    } finally {
+  //      writeUnlock();
+  //    }
+  //  }
 
-        InsertRowPlan plan = rowPlans[i];
-        if (!isAlive(plan.getTime()) || insertRowsOfOneDevicePlan.isExecuted(i)) {
-          // we do not need to write these part of data, as they can not be queried
-          // or the sub-plan has already been executed, we are retrying other sub-plans
-          continue;
-        }
-        // init map
-        long timePartitionId = StorageEngine.getTimePartition(plan.getTime());
+  //  /**
+  //   * insert batch of rows belongs to one device
+  //   *
+  //   * @param insertRowsOfOneDeviceNode batch of rows belongs to one device
+  //   */
+  //  public void insert(InsertRowsOfOneDeviceNode insertRowsOfOneDeviceNode)
+  //      throws WriteProcessException, TriggerExecutionException, BatchProcessException {
+  //    if (enableMemControl) {
+  //      StorageEngineV2.blockInsertionIfReject(null);
+  //    }
+  //    writeLock("InsertRowsOfOneDevice");
+  //    try {
+  //      boolean isSequence = false;
+  //      for (int i = 0; i < insertRowsOfOneDeviceNode.getInsertRowNodeList().size(); i++) {
+  //        InsertRowNode insertRowNode = insertRowsOfOneDeviceNode.getInsertRowNodeList().get(i);
+  //        if (!isAlive(insertRowNode.getTime())) {
+  //          // we do not need to write these part of data, as they can not be queried
+  //          // or the sub-plan has already been executed, we are retrying other sub-plans
+  //          insertRowsOfOneDeviceNode
+  //              .getResults()
+  //              .put(
+  //                  i,
+  //                  RpcUtils.getStatus(
+  //                      TSStatusCode.OUT_OF_TTL_ERROR.getStatusCode(),
+  //                      String.format(
+  //                          "Insertion time [%s] is less than ttl time bound [%s]",
+  //                          new Date(insertRowNode.getTime()),
+  //                          new Date(System.currentTimeMillis() - dataTTL))));
+  //          continue;
+  //        }
+  //        // init map
+  //        long timePartitionId = StorageEngineV2.getTimePartition(insertRowNode.getTime());
+  //
+  //        lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
+  //        // as the plans have been ordered, and we have get the write lock,
+  //        // So, if a plan is sequenced, then all the rest plans are sequenced.
+  //        //
+  //        if (!isSequence) {
+  //          isSequence =
+  //              insertRowNode.getTime()
+  //                  > lastFlushTimeManager.getFlushedTime(
+  //                      timePartitionId, insertRowNode.getDevicePath().getFullPath());
+  //        }
+  //        // is unsequence and user set config to discard out of order data
+  //        if (!isSequence
+  //            && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+  //          return;
+  //        }
+  //
+  //        lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+  //
+  //        // fire trigger before insertion
+  //        // TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, plan);
+  //        // insert to sequence or unSequence file
+  //        try {
+  //          insertToTsFileProcessor(insertRowNode, isSequence, timePartitionId);
+  //        } catch (WriteProcessException e) {
+  //          insertRowsOfOneDeviceNode
+  //              .getResults()
+  //              .put(i, RpcUtils.getStatus(e.getErrorCode(), e.getMessage()));
+  //        }
+  //        // fire trigger before insertion
+  //        // TriggerEngine.fire(TriggerEvent.AFTER_INSERT, plan);
+  //      }
+  //    } finally {
+  //      writeUnlock();
+  //    }
+  //    if (!insertRowsOfOneDeviceNode.getResults().isEmpty()) {
+  //      throw new BatchProcessException("Partial failed inserting rows of one device");
+  //    }
+  //  }
 
-        lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
-        // as the plans have been ordered, and we have get the write lock,
-        // So, if a plan is sequenced, then all the rest plans are sequenced.
-        //
-        if (!isSequence) {
-          isSequence =
-              plan.getTime()
-                  > lastFlushTimeManager.getFlushedTime(
-                      timePartitionId, plan.getDevicePath().getFullPath());
-        }
-        // is unsequence and user set config to discard out of order data
-        if (!isSequence
-            && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-          return;
-        }
-
-        lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
-
-        // fire trigger before insertion
-        TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, plan);
-        // insert to sequence or unSequence file
-        insertToTsFileProcessor(plan, isSequence, timePartitionId);
-        // fire trigger before insertion
-        TriggerEngine.fire(TriggerEvent.AFTER_INSERT, plan);
-      }
-    } finally {
-      writeUnlock();
-    }
-  }
-
-  /**
-   * insert batch of rows belongs to one device
-   *
-   * @param insertRowsOfOneDeviceNode batch of rows belongs to one device
-   */
-  public void insert(InsertRowsOfOneDeviceNode insertRowsOfOneDeviceNode)
-      throws WriteProcessException, TriggerExecutionException, BatchProcessException {
-    if (enableMemControl) {
-      StorageEngineV2.blockInsertionIfReject(null);
-    }
-    writeLock("InsertRowsOfOneDevice");
-    try {
-      boolean isSequence = false;
-      for (int i = 0; i < insertRowsOfOneDeviceNode.getInsertRowNodeList().size(); i++) {
-        InsertRowNode insertRowNode = insertRowsOfOneDeviceNode.getInsertRowNodeList().get(i);
-        if (!isAlive(insertRowNode.getTime())) {
-          // we do not need to write these part of data, as they can not be queried
-          // or the sub-plan has already been executed, we are retrying other sub-plans
-          insertRowsOfOneDeviceNode
-              .getResults()
-              .put(
-                  i,
-                  RpcUtils.getStatus(
-                      TSStatusCode.OUT_OF_TTL_ERROR.getStatusCode(),
-                      String.format(
-                          "Insertion time [%s] is less than ttl time bound [%s]",
-                          new Date(insertRowNode.getTime()),
-                          new Date(System.currentTimeMillis() - dataTTL))));
-          continue;
-        }
-        // init map
-        long timePartitionId = StorageEngineV2.getTimePartition(insertRowNode.getTime());
-
-        lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
-        // as the plans have been ordered, and we have get the write lock,
-        // So, if a plan is sequenced, then all the rest plans are sequenced.
-        //
-        if (!isSequence) {
-          isSequence =
-              insertRowNode.getTime()
-                  > lastFlushTimeManager.getFlushedTime(
-                      timePartitionId, insertRowNode.getDevicePath().getFullPath());
-        }
-        // is unsequence and user set config to discard out of order data
-        if (!isSequence
-            && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
-          return;
-        }
-
-        lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
-
-        // fire trigger before insertion
-        // TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, plan);
-        // insert to sequence or unSequence file
-        try {
-          insertToTsFileProcessor(insertRowNode, isSequence, timePartitionId);
-        } catch (WriteProcessException e) {
-          insertRowsOfOneDeviceNode
-              .getResults()
-              .put(i, RpcUtils.getStatus(e.getErrorCode(), e.getMessage()));
-        }
-        // fire trigger before insertion
-        // TriggerEngine.fire(TriggerEvent.AFTER_INSERT, plan);
-      }
-    } finally {
-      writeUnlock();
-    }
-    if (!insertRowsOfOneDeviceNode.getResults().isEmpty()) {
-      throw new BatchProcessException("Partial failed inserting rows of one device");
-    }
-  }
-
-  /**
-   * insert batch of rows belongs to multiple devices
-   *
-   * @param insertRowsNode batch of rows belongs to multiple devices
-   */
-  public void insert(InsertRowsNode insertRowsNode) throws BatchProcessException {
-    for (int i = 0; i < insertRowsNode.getInsertRowNodeList().size(); i++) {
-      InsertRowNode insertRowNode = insertRowsNode.getInsertRowNodeList().get(i);
-      try {
-        insert(insertRowNode);
-      } catch (WriteProcessException | TriggerExecutionException e) {
-        insertRowsNode.getResults().put(i, RpcUtils.getStatus(e.getErrorCode(), e.getMessage()));
-      }
-    }
-
-    if (!insertRowsNode.getResults().isEmpty()) {
-      throw new BatchProcessException("Partial failed inserting rows");
-    }
-  }
-
-  /**
-   * insert batch of tablets belongs to multiple devices
-   *
-   * @param insertMultiTabletsNode batch of tablets belongs to multiple devices
-   */
-  public void insertTablets(InsertMultiTabletsNode insertMultiTabletsNode)
-      throws BatchProcessException {
-    for (int i = 0; i < insertMultiTabletsNode.getInsertTabletNodeList().size(); i++) {
-      InsertTabletNode insertTabletNode = insertMultiTabletsNode.getInsertTabletNodeList().get(i);
-      try {
-        insertTablet(insertTabletNode);
-      } catch (TriggerExecutionException | WriteProcessException | BatchProcessException e) {
-        insertMultiTabletsNode
-            .getResults()
-            .put(i, RpcUtils.getStatus(e.getErrorCode(), e.getMessage()));
-      }
-    }
-
-    if (!insertMultiTabletsNode.getResults().isEmpty()) {
-      throw new BatchProcessException("Partial failed inserting multi tablets");
-    }
-  }
+  //  /**
+  //   * insert batch of rows belongs to multiple devices
+  //   *
+  //   * @param insertRowsNode batch of rows belongs to multiple devices
+  //   */
+  //  public void insert(InsertRowsNode insertRowsNode) throws BatchProcessException {
+  //    for (int i = 0; i < insertRowsNode.getInsertRowNodeList().size(); i++) {
+  //      InsertRowNode insertRowNode = insertRowsNode.getInsertRowNodeList().get(i);
+  //      try {
+  //        insert(insertRowNode);
+  //      } catch (WriteProcessException | TriggerExecutionException e) {
+  //        insertRowsNode.getResults().put(i, RpcUtils.getStatus(e.getErrorCode(),
+  // e.getMessage()));
+  //      }
+  //    }
+  //
+  //    if (!insertRowsNode.getResults().isEmpty()) {
+  //      throw new BatchProcessException("Partial failed inserting rows");
+  //    }
+  //  }
+  //
+  //  /**
+  //   * insert batch of tablets belongs to multiple devices
+  //   *
+  //   * @param insertMultiTabletsNode batch of tablets belongs to multiple devices
+  //   */
+  //  public void insertTablets(InsertMultiTabletsNode insertMultiTabletsNode)
+  //      throws BatchProcessException {
+  //    for (int i = 0; i < insertMultiTabletsNode.getInsertTabletNodeList().size(); i++) {
+  //      InsertTabletNode insertTabletNode =
+  // insertMultiTabletsNode.getInsertTabletNodeList().get(i);
+  //      try {
+  //        insertTablet(insertTabletNode);
+  //      } catch (TriggerExecutionException | WriteProcessException | BatchProcessException e) {
+  //        insertMultiTabletsNode
+  //            .getResults()
+  //            .put(i, RpcUtils.getStatus(e.getErrorCode(), e.getMessage()));
+  //      }
+  //    }
+  //
+  //    if (!insertMultiTabletsNode.getResults().isEmpty()) {
+  //      throw new BatchProcessException("Partial failed inserting multi tablets");
+  //    }
+  //  }
 
   @TestOnly
   public long getPartitionMaxFileVersions(long partitionId) {
@@ -3814,7 +3872,7 @@ public class DataRegion {
   }
 
   @TestOnly
-  public ILastFlushTimeManager getLastFlushTimeManager() {
+  public ILastFlushTimeManagerV2 getLastFlushTimeManager() {
     return lastFlushTimeManager;
   }
 
