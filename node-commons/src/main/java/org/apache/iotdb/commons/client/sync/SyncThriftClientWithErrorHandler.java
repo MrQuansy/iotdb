@@ -55,6 +55,8 @@ public class SyncThriftClientWithErrorHandler implements MethodInterceptor {
       return methodProxy.invokeSuper(o, objects);
     } catch (Throwable t) {
       Throwable origin = t;
+      LOGGER.error(t.getMessage());
+      LOGGER.error("stack trace {}", t.getStackTrace());
       if (t instanceof InvocationTargetException) {
         origin = ((InvocationTargetException) t).getTargetException();
       }
