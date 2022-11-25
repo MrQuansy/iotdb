@@ -133,6 +133,8 @@ public class ConfigNodeClient
   public static final String MSG_RECONNECTION_FAIL =
       "Fail to connect to any config node. Please check server status";
 
+  private static final int retryIntervalMs = 1000;
+
   private long connectionTimeout = ClientPoolProperty.DefaultProperty.WAIT_CLIENT_TIMEOUT_MS;
 
   private IConfigNodeRPCService.Iface client;
@@ -309,6 +311,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -330,6 +341,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -346,6 +366,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -367,6 +396,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -388,6 +426,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -409,6 +456,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -430,6 +486,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -451,6 +516,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -472,6 +546,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -494,6 +577,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -517,6 +609,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -538,6 +639,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -559,6 +669,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -580,6 +699,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -601,6 +729,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -623,6 +760,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -645,6 +791,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -667,6 +822,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -688,6 +852,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -710,6 +883,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -731,6 +913,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -752,6 +943,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -773,6 +973,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -794,6 +1003,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -845,6 +1063,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -866,6 +1093,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -887,6 +1123,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -908,6 +1153,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -929,6 +1183,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -955,6 +1218,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -977,6 +1249,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -998,6 +1279,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1021,6 +1311,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1042,6 +1341,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1068,6 +1376,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1089,6 +1406,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1105,6 +1431,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1121,6 +1456,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1142,6 +1486,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1163,6 +1516,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1185,6 +1547,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1205,6 +1576,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1226,6 +1606,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1247,6 +1636,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1268,6 +1666,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1289,6 +1696,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1310,6 +1726,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1331,6 +1756,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1352,6 +1786,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1373,6 +1816,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1389,6 +1841,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1410,6 +1871,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1431,6 +1901,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1452,6 +1931,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1473,6 +1961,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1494,6 +1991,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1515,6 +2021,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1536,6 +2051,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1557,6 +2081,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1578,6 +2111,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1599,6 +2141,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1615,6 +2166,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1636,6 +2196,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1657,6 +2226,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1678,6 +2256,15 @@ public class ConfigNodeClient
             Thread.currentThread().getStackTrace()[1].getMethodName());
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1694,6 +2281,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1710,6 +2306,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
@@ -1726,6 +2331,15 @@ public class ConfigNodeClient
       } catch (TException e) {
         configLeader = null;
       }
+      try {
+        // wait to start the next try
+        Thread.sleep(retryIntervalMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TException(
+            "Unexpected interruption when waiting to retry to connect to ConfigNode");
+      }
+
       reconnect();
     }
     throw new TException(MSG_RECONNECTION_FAIL);
