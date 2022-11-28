@@ -55,4 +55,6 @@ public interface IWritableMemChunkGroup {
       PartialPath originalPath, PartialPath devicePath, long startTimestamp, long endTimestamp);
 
   long getCurrentTVListSize(String measurement);
+
+  IWritableMemChunkGroup splitByFlushingWindow(double flushingWindowProportion);
 }

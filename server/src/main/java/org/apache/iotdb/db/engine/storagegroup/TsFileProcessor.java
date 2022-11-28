@@ -31,6 +31,8 @@ import org.apache.iotdb.db.engine.flush.NotifyFlushMemTable;
 import org.apache.iotdb.db.engine.memtable.AlignedWritableMemChunk;
 import org.apache.iotdb.db.engine.memtable.AlignedWritableMemChunkGroup;
 import org.apache.iotdb.db.engine.memtable.IMemTable;
+import org.apache.iotdb.db.engine.memtable.IWritableMemChunk;
+import org.apache.iotdb.db.engine.memtable.IWritableMemChunkGroup;
 import org.apache.iotdb.db.engine.memtable.PrimitiveMemTable;
 import org.apache.iotdb.db.engine.modification.Deletion;
 import org.apache.iotdb.db.engine.modification.Modification;
@@ -167,7 +169,8 @@ public class TsFileProcessor {
       StorageGroupInfo storageGroupInfo,
       CloseFileListener closeTsFileCallback,
       UpdateEndTimeCallBack updateLatestFlushTimeCallback,
-      boolean sequence)
+      boolean sequence,
+      IMemTable flushingWindowMemtable)
       throws IOException {
     this.storageGroupName = storageGroupName;
     this.tsFileResource = new TsFileResource(tsfile, this);
@@ -175,6 +178,9 @@ public class TsFileProcessor {
     this.writer = new RestorableTsFileIOWriter(tsfile);
     this.updateLatestFlushTimeCallback = updateLatestFlushTimeCallback;
     this.sequence = sequence;
+    if (flushingWindowMemtable != null) {
+      workMemTable = flushingWindowMemtable;
+    }
     logger.info("create a new tsfile processor {}", tsfile.getAbsolutePath());
     flushListeners.add(new WALFlushListener(this));
     closeFileListeners.add(closeTsFileCallback);
@@ -919,6 +925,36 @@ public class TsFileProcessor {
       return;
     }
 
+    // sort and split by sliding window
+    long sortTime = 0;
+
+    Map<IDeviceID, IWritableMemChunkGroup> memTableMap = tobeFlushed.getMemTableMap();
+    for (IWritableMemChunkGroup chunkGroup : memTableMap.values()) {
+      final Map<String, IWritableMemChunk> value = chunkGroup.getMemChunkMap();
+      if (chunkGroup.count() == 0 || value.isEmpty()) {
+        continue;
+      }
+      for (Map.Entry<String, IWritableMemChunk> iWritableMemChunkEntry : value.entrySet()) {
+        long startTime = System.currentTimeMillis();
+        IWritableMemChunk series = iWritableMemChunkEntry.getValue();
+        if (series.count() == 0) {
+          continue;
+        }
+        /*
+         * sort task
+         */
+        series.sortTvListForFlush();
+        sortTime += System.currentTimeMillis() - startTime;
+      }
+    }
+
+    IMemTable flushedMemTable = tobeFlushed.splitByFlushingWindow();
+    logger.info(
+        "Storage group {} memtable flushing into file {}: data sort time cost {} ms.",
+        storageGroupName,
+        writer.getFile().getName(),
+        sortTime);
+
     for (FlushListener flushListener : flushListeners) {
       flushListener.onFlushStart(tobeFlushed);
     }
@@ -926,7 +962,7 @@ public class TsFileProcessor {
     if (enableMemControl) {
       SystemInfo.getInstance().addFlushingMemTableCost(tobeFlushed.getTVListsRamCost());
     }
-    flushingMemTables.addLast(tobeFlushed);
+    flushingMemTables.addLast(flushedMemTable);
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: {} Memtable (signal = {}) is added into the flushing Memtable, queue size = {}",
@@ -937,7 +973,7 @@ public class TsFileProcessor {
     }
 
     if (!tobeFlushed.isSignalMemTable()) {
-      totalMemTableSize += tobeFlushed.memSize();
+      totalMemTableSize += flushedMemTable.memSize();
     }
     workMemTable = null;
     lastWorkMemtableFlushTime = System.currentTimeMillis();

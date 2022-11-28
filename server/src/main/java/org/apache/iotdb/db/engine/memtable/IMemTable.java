@@ -170,4 +170,6 @@ public interface IMemTable {
   long getMinPlanIndex();
 
   long getCreatedTime();
+
+  IMemTable splitByFlushingWindow();
 }

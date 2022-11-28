@@ -143,4 +143,6 @@ public interface IWritableMemChunk {
   long getFirstPoint();
 
   long getLastPoint();
+
+  IWritableMemChunk splitByFlushingWindow(double flushingWindowProportion);
 }

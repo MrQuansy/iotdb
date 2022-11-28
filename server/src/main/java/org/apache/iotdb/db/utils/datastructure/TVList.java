@@ -613,6 +613,9 @@ public abstract class TVList {
     }
   }
 
+  // todo need optimization
+  public abstract TVList splitByFlushingWindow(double flushingWindowProportion);
+
   public abstract TSDataType getDataType();
 
   public long getLastTime() {

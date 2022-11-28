@@ -119,6 +119,11 @@ public class AlignedWritableMemChunkGroup implements IWritableMemChunkGroup {
     return memChunk.getTVList().rowCount();
   }
 
+  @Override
+  public IWritableMemChunkGroup splitByFlushingWindow(double flushingWindowProportion) {
+    return null;
+  }
+
   public AlignedWritableMemChunk getAlignedMemChunk() {
     return memChunk;
   }

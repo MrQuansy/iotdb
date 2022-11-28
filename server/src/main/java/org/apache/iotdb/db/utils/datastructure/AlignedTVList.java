@@ -911,6 +911,11 @@ public class AlignedTVList extends TVList {
     throw new UnsupportedOperationException(ERR_DATATYPE_NOT_CONSISTENT);
   }
 
+  @Override
+  public TVList splitByFlushingWindow(double flushingWindowProportion) {
+    return null;
+  }
+
   public IPointReader getAlignedIterator(
       int floatPrecision,
       List<TSEncoding> encodingList,

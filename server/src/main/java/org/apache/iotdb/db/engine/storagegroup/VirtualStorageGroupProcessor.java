@@ -34,6 +34,7 @@ import org.apache.iotdb.db.engine.fileSystem.SystemFileFactory;
 import org.apache.iotdb.db.engine.flush.CloseFileListener;
 import org.apache.iotdb.db.engine.flush.FlushListener;
 import org.apache.iotdb.db.engine.flush.TsFileFlushPolicy;
+import org.apache.iotdb.db.engine.memtable.IMemTable;
 import org.apache.iotdb.db.engine.modification.Deletion;
 import org.apache.iotdb.db.engine.modification.ModificationFile;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
@@ -67,6 +68,7 @@ import org.apache.iotdb.db.qp.utils.DateTimeUtils;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.FileReaderManager;
 import org.apache.iotdb.db.query.control.QueryFileManager;
+import org.apache.iotdb.db.rescon.MemTableManager;
 import org.apache.iotdb.db.rescon.TsFileResourceManager;
 import org.apache.iotdb.db.service.IoTDB;
 import org.apache.iotdb.db.service.SettleService;
@@ -175,6 +177,9 @@ public class VirtualStorageGroupProcessor {
   private final ReadWriteLock closeQueryLock = new ReentrantReadWriteLock();
   /** time partition id in the storage group -> tsFileProcessor for this time partition */
   private final TreeMap<Long, TsFileProcessor> workSequenceTsFileProcessors = new TreeMap<>();
+
+  private final TreeMap<Long, IMemTable> remainingMemTable = new TreeMap<>();
+
   /** time partition id in the storage group -> tsFileProcessor for this time partition */
   private final TreeMap<Long, TsFileProcessor> workUnsequenceTsFileProcessors = new TreeMap<>();
 
@@ -1206,7 +1211,7 @@ public class VirtualStorageGroupProcessor {
             e);
         IoTDBDescriptor.getInstance().getConfig().setSystemStatus(SystemStatus.READ_ONLY);
         break;
-      } catch (IOException e) {
+      } catch (IOException | WriteProcessException e) {
         if (retryCnt < 3) {
           logger.warn("meet IOException when creating TsFileProcessor, retry it again", e);
           retryCnt++;
@@ -1230,7 +1235,7 @@ public class VirtualStorageGroupProcessor {
    */
   private TsFileProcessor getOrCreateTsFileProcessorIntern(
       long timeRangeId, TreeMap<Long, TsFileProcessor> tsFileProcessorTreeMap, boolean sequence)
-      throws IOException, DiskSpaceInsufficientException {
+      throws IOException, DiskSpaceInsufficientException, WriteProcessException {
 
     TsFileProcessor res = tsFileProcessorTreeMap.get(timeRangeId);
 
@@ -1245,7 +1250,7 @@ public class VirtualStorageGroupProcessor {
   }
 
   private TsFileProcessor newTsFileProcessor(boolean sequence, long timePartitionId)
-      throws IOException, DiskSpaceInsufficientException {
+      throws IOException, DiskSpaceInsufficientException, WriteProcessException {
 
     long version = partitionMaxFileVersions.getOrDefault(timePartitionId, 0L) + 1;
     partitionMaxFileVersions.put(timePartitionId, version);
@@ -1264,17 +1269,35 @@ public class VirtualStorageGroupProcessor {
   }
 
   private TsFileProcessor getTsFileProcessor(
-      boolean sequence, String filePath, long timePartitionId) throws IOException {
+      boolean sequence, String filePath, long timePartitionId)
+      throws IOException, WriteProcessException {
     TsFileProcessor tsFileProcessor;
     if (sequence) {
-      tsFileProcessor =
-          new TsFileProcessor(
-              logicalStorageGroupName + File.separator + virtualStorageGroupId,
-              fsFactory.getFileWithParent(filePath),
-              storageGroupInfo,
-              this::closeUnsealedTsFileProcessorCallBack,
-              this::updateLatestFlushTimeCallback,
-              true);
+      if (remainingMemTable.containsKey(timePartitionId)) {
+        tsFileProcessor =
+            new TsFileProcessor(
+                logicalStorageGroupName + File.separator + virtualStorageGroupId,
+                fsFactory.getFileWithParent(filePath),
+                storageGroupInfo,
+                this::closeUnsealedTsFileProcessorCallBack,
+                this::updateLatestFlushTimeCallback,
+                true,
+                config.isEnableFlushingWindowMemtable()
+                    ? remainingMemTable.get(timePartitionId)
+                    : null);
+      } else {
+        tsFileProcessor =
+            new TsFileProcessor(
+                logicalStorageGroupName + File.separator + virtualStorageGroupId,
+                fsFactory.getFileWithParent(filePath),
+                storageGroupInfo,
+                this::closeUnsealedTsFileProcessorCallBack,
+                this::updateLatestFlushTimeCallback,
+                true,
+                config.isEnableFlushingWindowMemtable()
+                    ? MemTableManager.getInstance().getAvailableMemTable(logicalStorageGroupName)
+                    : null);
+      }
     } else {
       tsFileProcessor =
           new TsFileProcessor(
@@ -1283,7 +1306,8 @@ public class VirtualStorageGroupProcessor {
               storageGroupInfo,
               this::closeUnsealedTsFileProcessorCallBack,
               this::unsequenceFlushCallback,
-              false);
+              false,
+              null);
     }
 
     if (enableMemControl) {

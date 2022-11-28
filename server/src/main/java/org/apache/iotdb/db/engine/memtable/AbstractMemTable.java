@@ -532,4 +532,10 @@ public abstract class AbstractMemTable implements IMemTable {
   private IDeviceID getDeviceID(PartialPath deviceId) {
     return DeviceIDFactory.getInstance().getDeviceID(deviceId);
   }
+
+  @Override
+  public IMemTable splitByFlushingWindow() {
+
+    return null;
+  }
 }

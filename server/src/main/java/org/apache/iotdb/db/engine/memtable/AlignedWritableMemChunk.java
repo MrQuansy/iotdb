@@ -374,4 +374,9 @@ public class AlignedWritableMemChunk implements IWritableMemChunk {
         .getTimeValuePair(getSortedTvListForQuery().rowCount() - 1)
         .getTimestamp();
   }
+
+  @Override
+  public IWritableMemChunk splitByFlushingWindow(double flushingWindowProportion) {
+    return null;
+  }
 }

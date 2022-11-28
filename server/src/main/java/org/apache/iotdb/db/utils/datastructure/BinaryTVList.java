@@ -278,4 +278,75 @@ public class BinaryTVList extends TVList {
   public TSDataType getDataType() {
     return TSDataType.TEXT;
   }
+
+  @Override
+  public TVList splitByFlushingWindow(double flushingWindowProportion) {
+    BinaryTVList flushTVList = new BinaryTVList();
+    int flushingCount = (int) (flushingWindowProportion * rowCount);
+
+    int arrayIndex = flushingCount / ARRAY_SIZE;
+    int elementIndex = flushingCount % ARRAY_SIZE;
+
+    flushTVList.rowCount = flushingCount;
+
+    for (int i = 0; i < arrayIndex; i++) {
+      flushTVList.timestamps.add(timestamps.get(i));
+      flushTVList.values.add(values.get(i));
+    }
+    long[] timestampFlushArray = (long[]) getPrimitiveArraysByType(TSDataType.INT64);
+    Binary[] valueFlushArray = (Binary[]) getPrimitiveArraysByType(TSDataType.INT64);
+    System.arraycopy(timestamps.get(arrayIndex), 0, timestampFlushArray, 0, elementIndex);
+    System.arraycopy(values.get(arrayIndex), 0, valueFlushArray, 0, elementIndex);
+    flushTVList.timestamps.add(timestampFlushArray);
+    flushTVList.values.add(valueFlushArray);
+
+    List<long[]> timestampWindow = timestamps;
+    List<Binary[]> valueWindow = values;
+
+    timestamps = new ArrayList<>();
+    values = new ArrayList<>();
+    int newRowCount = rowCount - flushingCount;
+
+    long[] remainTime = new long[newRowCount];
+    Binary[] remainValue = new Binary[newRowCount];
+    int existCount = 0;
+    for (; arrayIndex <= timestampWindow.size(); arrayIndex++) {
+      if (newRowCount - existCount >= ARRAY_SIZE) {
+        System.arraycopy(
+            timestampWindow.get(arrayIndex),
+            elementIndex,
+            remainTime,
+            existCount,
+            ARRAY_SIZE - elementIndex);
+        System.arraycopy(
+            valueWindow.get(arrayIndex),
+            elementIndex,
+            remainValue,
+            existCount,
+            ARRAY_SIZE - elementIndex);
+        existCount += (ARRAY_SIZE - existCount);
+        elementIndex = 0;
+      } else {
+        System.arraycopy(
+            timestampWindow.get(arrayIndex),
+            elementIndex,
+            remainTime,
+            existCount,
+            rowCount - existCount);
+        System.arraycopy(
+            valueWindow.get(arrayIndex),
+            elementIndex,
+            remainValue,
+            existCount,
+            rowCount - existCount);
+      }
+      PrimitiveArrayManager.release(timestampWindow.get(arrayIndex));
+      PrimitiveArrayManager.release(valueWindow.get(arrayIndex));
+    }
+
+    rowCount = 0;
+    putBinaries(remainTime, remainValue, null, 0, newRowCount);
+
+    return flushTVList;
+  }
 }

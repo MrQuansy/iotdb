@@ -115,7 +115,7 @@ public class MemTableFlushTask {
       SystemInfo.getInstance().applyTemporaryMemoryForFlushing(estimatedTemporaryMemSize);
     }
     long start = System.currentTimeMillis();
-    long sortTime = 0;
+    // long sortTime = 0;
 
     Map<IDeviceID, IWritableMemChunkGroup> memTableMap = memTable.getMemTableMap();
     List<IDeviceID> deviceIDList = new ArrayList<>(memTableMap.keySet());
@@ -137,19 +137,19 @@ public class MemTableFlushTask {
         /*
          * sort task (first task of flush pipeline)
          */
-        series.sortTvListForFlush();
-        sortTime += System.currentTimeMillis() - startTime;
+        // series.sortTvListForFlush();
+        // sortTime += System.currentTimeMillis() - startTime;
         encodingTaskQueue.put(series);
       }
 
       encodingTaskQueue.put(new EndChunkGroupIoTask());
     }
     encodingTaskQueue.put(new TaskEnd());
-    LOGGER.debug(
-        "Storage group {} memtable flushing into file {}: data sort time cost {} ms.",
-        storageGroup,
-        writer.getFile().getName(),
-        sortTime);
+    //    LOGGER.debug(
+    //        "Storage group {} memtable flushing into file {}: data sort time cost {} ms.",
+    //        storageGroup,
+    //        writer.getFile().getName(),
+    //        sortTime);
 
     try {
       encodingTaskFuture.get();

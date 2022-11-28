@@ -331,6 +331,25 @@ public class IoTDBConfig {
   /** When a memTable's size (in byte) exceeds this, the memtable is flushed to disk. Unit: byte */
   private long memtableSizeThreshold = 1024 * 1024 * 1024L;
 
+  public double getStaticFlushWindowProportion() {
+    return staticFlushWindowProportion;
+  }
+
+  public void setStaticFlushWindowProportion(double staticFlushWindowProportion) {
+    this.staticFlushWindowProportion = staticFlushWindowProportion;
+  }
+
+  private double staticFlushWindowProportion = 0.9;
+
+  public boolean isEnableFlushingWindowMemtable() {
+    return enableFlushingWindowMemtable;
+  }
+
+  public void setEnableFlushingWindowMemtable(boolean enableFlushingWindowMemtable) {
+    this.enableFlushingWindowMemtable = enableFlushingWindowMemtable;
+  }
+
+  private boolean enableFlushingWindowMemtable = true;
   /** Whether to timed flush sequence tsfiles' memtables. */
   private boolean enableTimedFlushSeqMemtable = false;
 

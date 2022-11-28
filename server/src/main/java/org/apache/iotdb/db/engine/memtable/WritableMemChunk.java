@@ -354,4 +354,11 @@ public class WritableMemChunk implements IWritableMemChunk {
       list.clear();
     }
   }
+
+  @Override
+  public IWritableMemChunk splitByFlushingWindow(double flushingWindowProportion) {
+    WritableMemChunk result = new WritableMemChunk(schema);
+    result.list = list.splitByFlushingWindow(flushingWindowProportion);
+    return result;
+  }
 }

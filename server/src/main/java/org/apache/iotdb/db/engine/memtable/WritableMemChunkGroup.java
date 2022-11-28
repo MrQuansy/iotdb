@@ -139,4 +139,13 @@ public class WritableMemChunkGroup implements IWritableMemChunkGroup {
   public long getCurrentTVListSize(String measurement) {
     return memChunkMap.get(measurement).getTVList().rowCount();
   }
+
+  public IWritableMemChunkGroup splitByFlushingWindow(double flushingWindowProportion) {
+    WritableMemChunkGroup writableMemChunkGroup = new WritableMemChunkGroup();
+    for (Entry<String, IWritableMemChunk> entry : memChunkMap.entrySet()) {
+      writableMemChunkGroup.memChunkMap.put(
+          entry.getKey(), entry.getValue().splitByFlushingWindow(flushingWindowProportion));
+    }
+    return writableMemChunkGroup;
+  }
 }
