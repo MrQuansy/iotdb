@@ -127,4 +127,8 @@ public class AlignedWritableMemChunkGroup implements IWritableMemChunkGroup {
   public AlignedWritableMemChunk getAlignedMemChunk() {
     return memChunk;
   }
+
+  public long getLatestTime() {
+    return memChunk.getLatestTime();
+  }
 }

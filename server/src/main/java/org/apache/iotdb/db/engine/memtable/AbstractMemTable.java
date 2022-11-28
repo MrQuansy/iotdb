@@ -31,7 +31,6 @@ import org.apache.iotdb.db.qp.physical.crud.InsertTabletPlan;
 import org.apache.iotdb.db.service.metrics.MetricService;
 import org.apache.iotdb.db.service.metrics.enums.Metric;
 import org.apache.iotdb.db.service.metrics.enums.Tag;
-import org.apache.iotdb.db.utils.MemUtils;
 import org.apache.iotdb.metrics.config.MetricConfigDescriptor;
 import org.apache.iotdb.metrics.utils.MetricLevel;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
@@ -64,7 +63,7 @@ public abstract class AbstractMemTable implements IMemTable {
   private final int avgSeriesPointNumThreshold =
       IoTDBDescriptor.getInstance().getConfig().getAvgSeriesPointNumberThreshold();
   /** memory size of data points, including TEXT values */
-  private long memSize = 0;
+  private long memSize = 1;
   /**
    * memory usage of all TVLists memory usage regardless of whether these TVLists are full,
    * including TEXT values
@@ -167,7 +166,7 @@ public abstract class AbstractMemTable implements IMemTable {
       schemaList.add(schema);
       dataTypes.add(schema.getType());
     }
-    memSize += MemUtils.getRecordsSize(dataTypes, values, disableMemControl);
+    // memsize += MemUtils.getRecordsSize(dataTypes, values, disableMemControl);
     write(
         insertRowPlan.getDeviceID(),
         insertRowPlan.getFailedIndices(),
@@ -221,7 +220,7 @@ public abstract class AbstractMemTable implements IMemTable {
     if (schemaList.isEmpty()) {
       return;
     }
-    memSize += MemUtils.getAlignedRecordsSize(dataTypes, values, disableMemControl);
+    // memSize += MemUtils.getAlignedRecordsSize(dataTypes, values, disableMemControl);
     writeAlignedRow(
         insertRowPlan.getDeviceID(),
         insertRowPlan.getFailedIndices(),
@@ -251,7 +250,7 @@ public abstract class AbstractMemTable implements IMemTable {
     updatePlanIndexes(insertTabletPlan.getIndex());
     try {
       write(insertTabletPlan, start, end);
-      memSize += MemUtils.getTabletSize(insertTabletPlan, start, end, disableMemControl);
+      // memSize += MemUtils.getTabletSize(insertTabletPlan, start, end, disableMemControl);
       int pointsInserted =
           (insertTabletPlan.getDataTypes().length - insertTabletPlan.getFailedMeasurementNumber())
               * (end - start);
@@ -278,7 +277,7 @@ public abstract class AbstractMemTable implements IMemTable {
     updatePlanIndexes(insertTabletPlan.getIndex());
     try {
       writeAlignedTablet(insertTabletPlan, start, end);
-      memSize += MemUtils.getAlignedTabletSize(insertTabletPlan, start, end, disableMemControl);
+      // memSize += MemUtils.getAlignedTabletSize(insertTabletPlan, start, end, disableMemControl);
       int pointsInserted =
           (insertTabletPlan.getDataTypes().length - insertTabletPlan.getFailedMeasurementNumber())
               * (end - start);
@@ -535,7 +534,30 @@ public abstract class AbstractMemTable implements IMemTable {
 
   @Override
   public IMemTable splitByFlushingWindow() {
+    AbstractMemTable flushMemtable = new PrimitiveMemTable();
+    flushMemtable.totalPointsNumThreshold = totalPointsNumThreshold;
 
-    return null;
+    double flushWindowProportion =
+        IoTDBDescriptor.getInstance().getConfig().getStaticFlushWindowProportion();
+
+    for (Entry<IDeviceID, IWritableMemChunkGroup> entry : memTableMap.entrySet()) {
+      flushMemtable.memTableMap.put(
+          entry.getKey(), entry.getValue().splitByFlushingWindow(flushWindowProportion));
+      flushMemtable.totalPointsNum += flushMemtable.memTableMap.get(entry.getKey()).count();
+    }
+
+    flushMemtable.seriesNumber = seriesNumber;
+
+    totalPointsNum -= flushMemtable.totalPointsNum;
+    return flushMemtable;
+  }
+
+  @Override
+  public Map<String, Long> getLatestTime() {
+    Map<String, Long> latestTimeMap = new HashMap<>();
+    for (Entry<IDeviceID, IWritableMemChunkGroup> entry : memTableMap.entrySet()) {
+      latestTimeMap.put(entry.getKey().toStringID(), entry.getValue().getLatestTime());
+    }
+    return latestTimeMap;
   }
 }

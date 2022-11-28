@@ -247,6 +247,18 @@ public class LastFlushTimeManager implements ILastFlushTimeManager {
     return globalLatestFlushedTimeForEachDevice.getOrDefault(path, Long.MIN_VALUE);
   }
 
+  public void updateFlushTime(long timePartitionId, Map<String, Long> flushTimeMap) {
+    for (Entry<String, Long> entry : flushTimeMap.entrySet()) {
+      partitionLatestFlushedTimeForEachDevice
+          .computeIfAbsent(timePartitionId, id -> new HashMap<>())
+          .put(entry.getKey(), entry.getValue());
+      if (globalLatestFlushedTimeForEachDevice.getOrDefault(entry.getKey(), Long.MIN_VALUE)
+          < entry.getValue()) {
+        globalLatestFlushedTimeForEachDevice.put(entry.getKey(), entry.getValue());
+      }
+    }
+  }
+
   // endregion
 
   // region clear

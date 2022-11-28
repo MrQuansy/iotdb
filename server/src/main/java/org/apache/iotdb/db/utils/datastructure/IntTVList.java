@@ -309,36 +309,21 @@ public class IntTVList extends TVList {
     long[] remainTime = new long[newRowCount];
     int[] remainValue = new int[newRowCount];
     int existCount = 0;
-    for (; arrayIndex <= timestampWindow.size(); arrayIndex++) {
-      if (newRowCount - existCount >= ARRAY_SIZE) {
-        System.arraycopy(
-            timestampWindow.get(arrayIndex),
-            elementIndex,
-            remainTime,
-            existCount,
-            ARRAY_SIZE - elementIndex);
-        System.arraycopy(
-            valueWindow.get(arrayIndex),
-            elementIndex,
-            remainValue,
-            existCount,
-            ARRAY_SIZE - elementIndex);
-        existCount += (ARRAY_SIZE - existCount);
-        elementIndex = 0;
+    for (; arrayIndex < timestampWindow.size(); arrayIndex++) {
+      int copyLength = 0;
+      if (elementIndex != 0) {
+        copyLength = Math.min(ARRAY_SIZE - elementIndex, newRowCount - existCount);
       } else {
-        System.arraycopy(
-            timestampWindow.get(arrayIndex),
-            elementIndex,
-            remainTime,
-            existCount,
-            rowCount - existCount);
-        System.arraycopy(
-            valueWindow.get(arrayIndex),
-            elementIndex,
-            remainValue,
-            existCount,
-            rowCount - existCount);
+        copyLength = Math.min(ARRAY_SIZE, newRowCount - existCount);
       }
+
+      System.arraycopy(
+          timestampWindow.get(arrayIndex), elementIndex, remainTime, existCount, copyLength);
+      System.arraycopy(
+          valueWindow.get(arrayIndex), elementIndex, remainValue, existCount, copyLength);
+
+      elementIndex = 0;
+      existCount += copyLength;
       PrimitiveArrayManager.release(timestampWindow.get(arrayIndex));
       PrimitiveArrayManager.release(valueWindow.get(arrayIndex));
     }

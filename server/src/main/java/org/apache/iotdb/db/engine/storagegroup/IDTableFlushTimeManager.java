@@ -180,6 +180,9 @@ public class IDTableFlushTimeManager implements ILastFlushTimeManager {
     return idTable.getDeviceEntry(path).getGlobalFlushTime();
   }
 
+  @Override
+  public void updateFlushTime(long timePartitionId, Map<String, Long> flushTimeMap) {}
+
   // endregion
 
   // region clear

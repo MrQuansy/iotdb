@@ -172,4 +172,6 @@ public interface IMemTable {
   long getCreatedTime();
 
   IMemTable splitByFlushingWindow();
+
+  Map<String, Long> getLatestTime();
 }

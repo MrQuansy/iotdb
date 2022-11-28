@@ -915,8 +915,7 @@ public class TsFileProcessor {
    * flushManager again.
    */
   private void addAMemtableIntoFlushingList(IMemTable tobeFlushed) throws IOException {
-    if (!tobeFlushed.isSignalMemTable()
-        && (!updateLatestFlushTimeCallback.call(this) || tobeFlushed.memSize() == 0)) {
+    if (!tobeFlushed.isSignalMemTable() && (tobeFlushed.memSize() == 0)) {
       logger.warn(
           "This normal memtable is empty, skip it in flush. {}: {} Memetable info: {}",
           storageGroupName,
@@ -948,7 +947,13 @@ public class TsFileProcessor {
       }
     }
 
-    IMemTable flushedMemTable = tobeFlushed.splitByFlushingWindow();
+    IMemTable flushedMemTable =
+        IoTDBDescriptor.getInstance().getConfig().isEnableFlushingWindowMemtable()
+            ? tobeFlushed.splitByFlushingWindow()
+            : tobeFlushed;
+
+    updateLatestFlushTimeCallback.call(this, flushedMemTable.getLatestTime());
+
     logger.info(
         "Storage group {} memtable flushing into file {}: data sort time cost {} ms.",
         storageGroupName,
@@ -968,7 +973,7 @@ public class TsFileProcessor {
           "{}: {} Memtable (signal = {}) is added into the flushing Memtable, queue size = {}",
           storageGroupName,
           tsFileResource.getTsFile().getName(),
-          tobeFlushed.isSignalMemTable(),
+          flushedMemTable.isSignalMemTable(),
           flushingMemTables.size());
     }
 

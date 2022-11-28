@@ -379,4 +379,9 @@ public class AlignedWritableMemChunk implements IWritableMemChunk {
   public IWritableMemChunk splitByFlushingWindow(double flushingWindowProportion) {
     return null;
   }
+
+  @Override
+  public long getLatestTime() {
+    return list.getLastTime();
+  }
 }

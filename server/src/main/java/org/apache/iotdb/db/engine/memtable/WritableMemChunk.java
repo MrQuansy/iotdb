@@ -361,4 +361,9 @@ public class WritableMemChunk implements IWritableMemChunk {
     result.list = list.splitByFlushingWindow(flushingWindowProportion);
     return result;
   }
+
+  @Override
+  public long getLatestTime() {
+    return list.getLastTime();
+  }
 }

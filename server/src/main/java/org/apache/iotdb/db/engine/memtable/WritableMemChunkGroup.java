@@ -148,4 +148,12 @@ public class WritableMemChunkGroup implements IWritableMemChunkGroup {
     }
     return writableMemChunkGroup;
   }
+
+  public long getLatestTime() {
+    long time = Long.MIN_VALUE;
+    for (IWritableMemChunk chunk : memChunkMap.values()) {
+      time = Math.max(chunk.getLatestTime(), time);
+    }
+    return time;
+  }
 }

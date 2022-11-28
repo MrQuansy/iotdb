@@ -802,7 +802,7 @@ public class VirtualStorageGroupProcessor {
                     storageGroupInfo,
                     tsFileResource,
                     this::closeUnsealedTsFileProcessorCallBack,
-                    this::updateLatestFlushTimeCallback,
+                    this::sequenceFlushCallback,
                     true,
                     writer);
             if (enableMemControl) {
@@ -1280,7 +1280,7 @@ public class VirtualStorageGroupProcessor {
                 fsFactory.getFileWithParent(filePath),
                 storageGroupInfo,
                 this::closeUnsealedTsFileProcessorCallBack,
-                this::updateLatestFlushTimeCallback,
+                this::sequenceFlushCallback,
                 true,
                 config.isEnableFlushingWindowMemtable()
                     ? remainingMemTable.get(timePartitionId)
@@ -1292,10 +1292,19 @@ public class VirtualStorageGroupProcessor {
                 fsFactory.getFileWithParent(filePath),
                 storageGroupInfo,
                 this::closeUnsealedTsFileProcessorCallBack,
-                this::updateLatestFlushTimeCallback,
+                this::sequenceFlushCallback,
                 true,
                 config.isEnableFlushingWindowMemtable()
-                    ? MemTableManager.getInstance().getAvailableMemTable(logicalStorageGroupName)
+                    ? remainingMemTable.computeIfAbsent(
+                        timePartitionId,
+                        k -> {
+                          try {
+                            return MemTableManager.getInstance()
+                                .getAvailableMemTable(logicalStorageGroupName);
+                          } catch (WriteProcessException e) {
+                            throw new RuntimeException(e);
+                          }
+                        })
                     : null);
       }
     } else {
@@ -2170,21 +2179,14 @@ public class VirtualStorageGroupProcessor {
     }
   }
 
-  private boolean unsequenceFlushCallback(TsFileProcessor processor) {
+  private boolean unsequenceFlushCallback(
+      TsFileProcessor processor, Map<String, Long> flushTimeMap) {
     return true;
   }
 
-  private boolean updateLatestFlushTimeCallback(TsFileProcessor processor) {
-    boolean res = lastFlushTimeManager.updateLatestFlushTime(processor.getTimeRangeId());
-    if (!res) {
-      logger.warn(
-          "Partition: {} does't have latest time for each device. "
-              + "No valid record is written into memtable. Flushing tsfile is: {}",
-          processor.getTimeRangeId(),
-          processor.getTsFileResource().getTsFile());
-    }
-
-    return res;
+  private boolean sequenceFlushCallback(TsFileProcessor processor, Map<String, Long> flushTimeMap) {
+    lastFlushTimeManager.updateFlushTime(processor.getTimeRangeId(), flushTimeMap);
+    return true;
   }
 
   /**
@@ -3309,7 +3311,7 @@ public class VirtualStorageGroupProcessor {
   @FunctionalInterface
   public interface UpdateEndTimeCallBack {
 
-    boolean call(TsFileProcessor caller);
+    boolean call(TsFileProcessor caller, Map<String, Long> flushTimeMap);
   }
 
   @FunctionalInterface

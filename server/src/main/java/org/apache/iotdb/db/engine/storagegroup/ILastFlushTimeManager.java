@@ -77,6 +77,8 @@ public interface ILastFlushTimeManager {
   long getLastTime(long timePartitionId, String path);
 
   long getGlobalFlushedTime(String path);
+
+  void updateFlushTime(long timePartitionId, Map<String, Long> flushTimeMap);
   // endregion
 
   // region clear

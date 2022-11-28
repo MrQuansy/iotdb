@@ -57,4 +57,6 @@ public interface IWritableMemChunkGroup {
   long getCurrentTVListSize(String measurement);
 
   IWritableMemChunkGroup splitByFlushingWindow(double flushingWindowProportion);
+
+  long getLatestTime();
 }

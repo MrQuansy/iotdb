@@ -298,7 +298,7 @@ public class FloatTVList extends TVList {
       flushTVList.values.add(values.get(i));
     }
     long[] timestampFlushArray = (long[]) getPrimitiveArraysByType(TSDataType.INT64);
-    float[] valueFlushArray = (float[]) getPrimitiveArraysByType(TSDataType.INT64);
+    float[] valueFlushArray = (float[]) getPrimitiveArraysByType(TSDataType.FLOAT);
     System.arraycopy(timestamps.get(arrayIndex), 0, timestampFlushArray, 0, elementIndex);
     System.arraycopy(values.get(arrayIndex), 0, valueFlushArray, 0, elementIndex);
     flushTVList.timestamps.add(timestampFlushArray);
@@ -314,36 +314,22 @@ public class FloatTVList extends TVList {
     long[] remainTime = new long[newRowCount];
     float[] remainValue = new float[newRowCount];
     int existCount = 0;
-    for (; arrayIndex <= timestampWindow.size(); arrayIndex++) {
-      if (newRowCount - existCount >= ARRAY_SIZE) {
-        System.arraycopy(
-            timestampWindow.get(arrayIndex),
-            elementIndex,
-            remainTime,
-            existCount,
-            ARRAY_SIZE - elementIndex);
-        System.arraycopy(
-            valueWindow.get(arrayIndex),
-            elementIndex,
-            remainValue,
-            existCount,
-            ARRAY_SIZE - elementIndex);
-        existCount += (ARRAY_SIZE - existCount);
-        elementIndex = 0;
+    for (; arrayIndex < timestampWindow.size(); arrayIndex++) {
+      int copyLength = 0;
+      if (elementIndex != 0) {
+        copyLength = Math.min(ARRAY_SIZE - elementIndex, newRowCount - existCount);
       } else {
-        System.arraycopy(
-            timestampWindow.get(arrayIndex),
-            elementIndex,
-            remainTime,
-            existCount,
-            rowCount - existCount);
-        System.arraycopy(
-            valueWindow.get(arrayIndex),
-            elementIndex,
-            remainValue,
-            existCount,
-            rowCount - existCount);
+        copyLength = Math.min(ARRAY_SIZE, newRowCount - existCount);
       }
+
+      System.arraycopy(
+          timestampWindow.get(arrayIndex), elementIndex, remainTime, existCount, copyLength);
+      System.arraycopy(
+          valueWindow.get(arrayIndex), elementIndex, remainValue, existCount, copyLength);
+
+      elementIndex = 0;
+      existCount += copyLength;
+
       PrimitiveArrayManager.release(timestampWindow.get(arrayIndex));
       PrimitiveArrayManager.release(valueWindow.get(arrayIndex));
     }
