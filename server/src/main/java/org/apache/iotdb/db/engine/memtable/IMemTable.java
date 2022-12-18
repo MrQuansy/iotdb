@@ -149,6 +149,9 @@ public interface IMemTable extends WALEntryValue {
   /** must guarantee the device exists in the work memtable only used when mem control enabled */
   boolean checkIfChunkDoesNotExist(IDeviceID deviceId, String measurement);
 
+  /** check device exists in memtable */
+  boolean checkIfDeviceDoesNotExist(IDeviceID deviceId);
+
   /** only used when mem control enabled */
   long getCurrentTVListSize(IDeviceID deviceId, String measurement);
 

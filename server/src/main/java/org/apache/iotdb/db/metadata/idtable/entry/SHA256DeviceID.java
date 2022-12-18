@@ -161,6 +161,11 @@ public class SHA256DeviceID implements IDeviceID {
     ReadWriteIOUtils.write(l4, byteBuffer);
   }
 
+  @Override
+  public long getSize() {
+    return 32;
+  }
+
   public static SHA256DeviceID deserialize(ByteBuffer byteBuffer) {
     SHA256DeviceID sha256DeviceID = new SHA256DeviceID();
     sha256DeviceID.l1 = ReadWriteIOUtils.readLong(byteBuffer);

@@ -163,6 +163,10 @@ public class TsFileProcessor {
   /** flush file listener */
   private List<FlushListener> flushListeners = new ArrayList<>();
 
+  private long BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY = 112;
+
+  private long BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY = 232;
+
   @SuppressWarnings("squid:S107")
   TsFileProcessor(
       String storageGroupName,
@@ -377,6 +381,10 @@ public class TsFileProcessor {
     // get device id
     IDeviceID deviceID = getDeviceID(deviceId);
 
+    if (workMemTable.checkIfDeviceDoesNotExist(deviceID)) {
+      memTableIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY + deviceID.getSize();
+    }
+
     for (int i = 0; i < dataTypes.length; i++) {
       // skip failed Measurements
       if (dataTypes[i] == null || measurements[i] == null) {
@@ -386,6 +394,7 @@ public class TsFileProcessor {
         // ChunkMetadataIncrement
         chunkMetadataIncrement += ChunkMetadata.calculateRamSize(measurements[i], dataTypes[i]);
         memTableIncrement += TVList.tvListArrayMemCost(dataTypes[i]);
+        memTableIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY + measurements[i].length() * 2L;
       } else {
         // here currentChunkPointNum >= 1
         long currentChunkPointNum = workMemTable.getCurrentTVListSize(deviceID, measurements[i]);

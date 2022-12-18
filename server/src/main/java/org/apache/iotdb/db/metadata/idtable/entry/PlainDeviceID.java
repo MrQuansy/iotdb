@@ -67,4 +67,9 @@ public class PlainDeviceID implements IDeviceID {
   public static PlainDeviceID deserialize(ByteBuffer byteBuffer) {
     return new PlainDeviceID(ReadWriteIOUtils.readString(byteBuffer));
   }
+
+  @Override
+  public long getSize() {
+    return 40 + deviceID.length() * 2;
+  }
 }

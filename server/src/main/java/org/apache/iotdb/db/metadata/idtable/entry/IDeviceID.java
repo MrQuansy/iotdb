@@ -32,4 +32,6 @@ public interface IDeviceID {
   public String toStringID();
 
   public void serialize(ByteBuffer byteBuffer);
+
+  public long getSize();
 }
