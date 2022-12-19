@@ -69,12 +69,25 @@ public interface IMemTable extends WALEntryValue {
   /** only used when mem control enabled */
   void addTVListRamCost(long cost);
 
+  void addChunkMetaDataRamCost(long cost);
+
+  void addHashIndexRamCost(long cost);
+
   /** only used when mem control enabled */
   void releaseTVListRamCost(long cost);
+
+  void releaseChunkMetaDataRamCost(long cost);
+
+  void releaseHashIndexRamCost(long cost);
 
   /** only used when mem control enabled */
   long getTVListsRamCost();
 
+  long getChunkMetaDataRamCost();
+
+  long getHashIndexRamCost();
+
+  long getTotalRamCost();
   /**
    * only used when mem control enabled
    *

@@ -81,6 +81,11 @@ public abstract class AbstractMemTable implements IMemTable {
       IoTDBDescriptor.getInstance().getConfig().getAvgSeriesPointNumberThreshold();
   /** memory size of data points, including TEXT values */
   private long memSize = 0;
+
+  private long chunkMetaRamCost = 0;
+
+  private long hashIndexRamCost = 0;
+
   /**
    * memory usage of all TVLists memory usage regardless of whether these TVLists are full,
    * including TEXT values
@@ -431,6 +436,8 @@ public abstract class AbstractMemTable implements IMemTable {
     totalPointsNum = 0;
     totalPointsNumThreshold = 0;
     tvListRamCost = 0;
+    hashIndexRamCost = 0;
+    chunkMetaRamCost = 0;
     maxPlanIndex = 0;
     minPlanIndex = 0;
   }
@@ -501,6 +508,26 @@ public abstract class AbstractMemTable implements IMemTable {
   }
 
   @Override
+  public void addChunkMetaDataRamCost(long cost) {
+    this.chunkMetaRamCost += cost;
+  }
+
+  @Override
+  public void addHashIndexRamCost(long cost) {
+    this.hashIndexRamCost += cost;
+  }
+
+  @Override
+  public void releaseChunkMetaDataRamCost(long cost) {
+    this.chunkMetaRamCost -= cost;
+  }
+
+  @Override
+  public void releaseHashIndexRamCost(long cost) {
+    this.hashIndexRamCost -= cost;
+  }
+
+  @Override
   public void addTVListRamCost(long cost) {
     this.tvListRamCost += cost;
   }
@@ -513,6 +540,21 @@ public abstract class AbstractMemTable implements IMemTable {
   @Override
   public long getTVListsRamCost() {
     return tvListRamCost;
+  }
+
+  @Override
+  public long getChunkMetaDataRamCost() {
+    return chunkMetaRamCost;
+  }
+
+  @Override
+  public long getHashIndexRamCost() {
+    return hashIndexRamCost;
+  }
+
+  @Override
+  public long getTotalRamCost() {
+    return tvListRamCost + chunkMetaRamCost + hashIndexRamCost;
   }
 
   @Override

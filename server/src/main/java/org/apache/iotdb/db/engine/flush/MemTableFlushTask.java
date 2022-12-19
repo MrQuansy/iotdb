@@ -187,10 +187,13 @@ public class MemTableFlushTask {
             "flush");
 
     LOGGER.info(
-        "Database {} memtable {} flushing a memtable has finished! Time consumption: {}ms",
+        "Database {} memtable {} flushing a memtable has finished! Time consumption: {}ms. Sort time consumption: {}ms, encoding time consumption: {}ms, io time consumption: {}ms.",
         storageGroup,
         memTable,
-        System.currentTimeMillis() - start);
+        System.currentTimeMillis() - start,
+        sortTime,
+        memSerializeTime,
+        ioTime);
   }
 
   /** encoding task (second task of pipeline) */
@@ -205,7 +208,6 @@ public class MemTableFlushTask {
               storageGroup,
               writer.getFile().getName());
           while (true) {
-
             Object task;
             try {
               task = encodingTaskQueue.take();

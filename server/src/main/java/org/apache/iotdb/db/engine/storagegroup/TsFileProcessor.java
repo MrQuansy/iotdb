@@ -378,11 +378,13 @@ public class TsFileProcessor {
     long memTableIncrement = 0L;
     long textDataIncrement = 0L;
     long chunkMetadataIncrement = 0L;
+    long hashIndexIncrement = 0L;
     // get device id
     IDeviceID deviceID = getDeviceID(deviceId);
 
     if (workMemTable.checkIfDeviceDoesNotExist(deviceID)) {
-      memTableIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY + deviceID.getSize();
+      hashIndexIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY + deviceID.getSize();
+      //      memTableIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY + deviceID.getSize();
     }
 
     for (int i = 0; i < dataTypes.length; i++) {
@@ -394,7 +396,7 @@ public class TsFileProcessor {
         // ChunkMetadataIncrement
         chunkMetadataIncrement += ChunkMetadata.calculateRamSize(measurements[i], dataTypes[i]);
         memTableIncrement += TVList.tvListArrayMemCost(dataTypes[i]);
-        memTableIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY + measurements[i].length() * 2L;
+        hashIndexIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY + measurements[i].length() * 2L;
       } else {
         // here currentChunkPointNum >= 1
         long currentChunkPointNum = workMemTable.getCurrentTVListSize(deviceID, measurements[i]);
@@ -408,8 +410,11 @@ public class TsFileProcessor {
         textDataIncrement += MemUtils.getBinarySize((Binary) values[i]);
       }
     }
-    updateMemoryInfo(memTableIncrement, chunkMetadataIncrement, textDataIncrement);
-    return new long[] {memTableIncrement, textDataIncrement, chunkMetadataIncrement};
+    updateMemoryInfo(
+        memTableIncrement, chunkMetadataIncrement, textDataIncrement, hashIndexIncrement);
+    return new long[] {
+      memTableIncrement, textDataIncrement, chunkMetadataIncrement, hashIndexIncrement
+    };
   }
 
   @SuppressWarnings("squid:S3776") // high Cognitive Complexity
@@ -420,9 +425,17 @@ public class TsFileProcessor {
     long memTableIncrement = 0L;
     long textDataIncrement = 0L;
     long chunkMetadataIncrement = 0L;
+    long hashIndexIncrement = 0L;
     AlignedWritableMemChunk alignedMemChunk = null;
     // get device id
     IDeviceID deviceID = getDeviceID(deviceId);
+
+    if (workMemTable.checkIfDeviceDoesNotExist(deviceID)) {
+      hashIndexIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY + deviceID.getSize();
+      for (String measurement : measurements) {
+        hashIndexIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY + measurement.length() * 2L;
+      }
+    }
 
     if (workMemTable.checkIfChunkDoesNotExist(deviceID, AlignedPath.VECTOR_PLACEHOLDER)) {
       // ChunkMetadataIncrement
@@ -458,8 +471,11 @@ public class TsFileProcessor {
         textDataIncrement += MemUtils.getBinarySize((Binary) values[i]);
       }
     }
-    updateMemoryInfo(memTableIncrement, chunkMetadataIncrement, textDataIncrement);
-    return new long[] {memTableIncrement, textDataIncrement, chunkMetadataIncrement};
+    updateMemoryInfo(
+        memTableIncrement, chunkMetadataIncrement, textDataIncrement, hashIndexIncrement);
+    return new long[] {
+      memTableIncrement, textDataIncrement, chunkMetadataIncrement, hashIndexIncrement
+    };
   }
 
   private long[] checkMemCostAndAddToTspInfo(
@@ -473,7 +489,7 @@ public class TsFileProcessor {
     if (start >= end) {
       return new long[] {0, 0, 0};
     }
-    long[] memIncrements = new long[3]; // memTable, text, chunk metadata
+    long[] memIncrements = new long[4]; // memTable, text, chunk metadata, hash index
 
     // get device id
     IDeviceID deviceID = getDeviceID(deviceId);
@@ -488,7 +504,7 @@ public class TsFileProcessor {
     long memTableIncrement = memIncrements[0];
     long textDataIncrement = memIncrements[1];
     long chunkMetadataIncrement = memIncrements[2];
-    updateMemoryInfo(memTableIncrement, chunkMetadataIncrement, textDataIncrement);
+    updateMemoryInfo(memTableIncrement, chunkMetadataIncrement, textDataIncrement, 0);
     return memIncrements;
   }
 
@@ -503,7 +519,7 @@ public class TsFileProcessor {
     if (start >= end) {
       return new long[] {0, 0, 0};
     }
-    long[] memIncrements = new long[3]; // memTable, text, chunk metadata
+    long[] memIncrements = new long[4]; // memTable, text, chunk metadata, hash index
 
     // get device id
     IDeviceID deviceID = getDeviceID(deviceId);
@@ -512,7 +528,7 @@ public class TsFileProcessor {
     long memTableIncrement = memIncrements[0];
     long textDataIncrement = memIncrements[1];
     long chunkMetadataIncrement = memIncrements[2];
-    updateMemoryInfo(memTableIncrement, chunkMetadataIncrement, textDataIncrement);
+    updateMemoryInfo(memTableIncrement, chunkMetadataIncrement, textDataIncrement, 0);
     return memIncrements;
   }
 
@@ -613,11 +629,14 @@ public class TsFileProcessor {
   }
 
   private void updateMemoryInfo(
-      long memTableIncrement, long chunkMetadataIncrement, long textDataIncrement)
+      long memTableIncrement,
+      long chunkMetadataIncrement,
+      long textDataIncrement,
+      long hashIndexIncrement)
       throws WriteProcessException {
     memTableIncrement += textDataIncrement;
     dataRegionInfo.addStorageGroupMemCost(memTableIncrement);
-    tsFileProcessorInfo.addTSPMemCost(chunkMetadataIncrement);
+    tsFileProcessorInfo.addTSPMemCost(chunkMetadataIncrement + hashIndexIncrement);
     if (dataRegionInfo.needToReportToSystem()) {
       try {
         if (!SystemInfo.getInstance().reportStorageGroupStatus(dataRegionInfo, this)) {
@@ -625,26 +644,31 @@ public class TsFileProcessor {
         }
       } catch (WriteProcessRejectException e) {
         dataRegionInfo.releaseStorageGroupMemCost(memTableIncrement);
-        tsFileProcessorInfo.releaseTSPMemCost(chunkMetadataIncrement);
+        tsFileProcessorInfo.releaseTSPMemCost(chunkMetadataIncrement + hashIndexIncrement);
         SystemInfo.getInstance().resetStorageGroupStatus(dataRegionInfo);
         throw e;
       }
     }
     workMemTable.addTVListRamCost(memTableIncrement);
     workMemTable.addTextDataSize(textDataIncrement);
+    workMemTable.addChunkMetaDataRamCost(chunkMetadataIncrement);
+    workMemTable.addHashIndexRamCost(hashIndexIncrement);
   }
 
   private void rollbackMemoryInfo(long[] memIncrements) {
     long memTableIncrement = memIncrements[0];
     long textDataIncrement = memIncrements[1];
     long chunkMetadataIncrement = memIncrements[2];
+    long hashIndexIncrement = memIncrements[3];
 
     memTableIncrement += textDataIncrement;
     dataRegionInfo.releaseStorageGroupMemCost(memTableIncrement);
-    tsFileProcessorInfo.releaseTSPMemCost(chunkMetadataIncrement);
+    tsFileProcessorInfo.releaseTSPMemCost(chunkMetadataIncrement + hashIndexIncrement);
     SystemInfo.getInstance().resetStorageGroupStatus(dataRegionInfo);
     workMemTable.releaseTVListRamCost(memTableIncrement);
     workMemTable.releaseTextDataSize(textDataIncrement);
+    workMemTable.releaseChunkMetaDataRamCost(chunkMetadataIncrement);
+    workMemTable.releaseHashIndexRamCost(hashIndexIncrement);
   }
 
   /**
@@ -698,9 +722,13 @@ public class TsFileProcessor {
     }
     if (workMemTable.shouldFlush()) {
       logger.info(
-          "The memtable size {} of tsfile {} reaches the mem control threshold",
+          "The memtable size {} of tsfile {} reaches the mem control threshold. tvlist ram cost: {}, hashmap ram cost: {}, chunk metadata ram cost: {}, total cost: {}.",
           workMemTable.memSize(),
-          tsFileResource.getTsFile().getAbsolutePath());
+          tsFileResource.getTsFile().getAbsolutePath(),
+          workMemTable.getTVListsRamCost(),
+          workMemTable.getHashIndexRamCost(),
+          workMemTable.getChunkMetaDataRamCost(),
+          workMemTable.getTotalRamCost());
       return true;
     }
     if (!enableMemControl && workMemTable.memSize() >= getMemtableSizeThresholdBasedOnSeriesNum()) {
