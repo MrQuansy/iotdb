@@ -16,23 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.tsfile.common.constant;
 
-public class TsFileConstant {
+package org.apache.iotdb.db.utils.datastructure;
 
-  public static final String TSFILE_SUFFIX = ".tsfile";
-  public static final String TSFILE_HOME = "TSFILE_HOME";
-  public static final String TSFILE_CONF = "TSFILE_CONF";
-  public static final String PATH_ROOT = "root";
-  public static final String TMP_SUFFIX = "tmp";
-  public static final String PATH_SEPARATOR = ".";
-  public static final char PATH_SEPARATOR_CHAR = '.';
-  public static final String PATH_SEPARATER_NO_REGEX = "\\.";
-  public static final char DOUBLE_QUOTE = '"';
+import org.junit.Assert;
+import org.junit.Test;
 
-  public static final byte TIME_COLUMN_MASK = (byte) 0x80;
-  public static final byte VALUE_COLUMN_MASK = (byte) 0x40;
-  public static final byte MIXED_GROUP_COLUMN_MASK = (byte) 0x20;
+public class MixedGroupTVListTest {
 
-  private TsFileConstant() {}
+  @Test
+  public void testIntTVList1() {
+    MixedGroupIntTVList tvList = new MixedGroupIntTVList();
+    for (int i = 0; i < 10; i++) {
+      tvList.putInt(i, i, (byte) 1);
+      tvList.putInt(i, i, (byte) 2);
+    }
+    for (int i = 0; i < tvList.rowCount; i += 2) {
+      Assert.assertEquals(i / 2, tvList.getTime(i));
+      Assert.assertEquals(i / 2, tvList.getTime(i + 1));
+    }
+    tvList.sort();
+    for (int i = 0; i < tvList.rowCount / 2; i++) {
+      Assert.assertEquals(i, tvList.getInt(i));
+      Assert.assertEquals(i, tvList.getTime(i));
+    }
+  }
 }

@@ -194,7 +194,9 @@ public class ChunkMetadata implements IChunkMetadata {
     chunkMetaData.offsetOfChunkHeader = ReadWriteIOUtils.readLong(buffer);
     // if the TimeSeriesMetadataType is not 0, it means it has more than one chunk
     // and each chunk's metadata has its own statistics
-    if ((timeseriesMetadata.getTimeSeriesMetadataType() & 0x3F) != 0) {
+
+    // todo for mixed group chunkmetadata
+    if ((timeseriesMetadata.getTimeSeriesMetadataType() & 0x3F) == 1) {
       chunkMetaData.statistics = Statistics.deserialize(buffer, chunkMetaData.tsDataType);
     } else {
       // if the TimeSeriesMetadataType is 0, it means it has only one chunk

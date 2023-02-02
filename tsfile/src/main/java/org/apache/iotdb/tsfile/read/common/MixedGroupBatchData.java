@@ -21,29 +21,37 @@ package org.apache.iotdb.tsfile.read.common;
 
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 
-public class BatchDataFactory {
+public class MixedGroupBatchData extends BatchData {
 
-  private BatchDataFactory() {
-    throw new IllegalStateException("Factory class");
+  public int[] deviceIds;
+
+  public MixedGroupBatchData(TSDataType type) {
+    super(type);
+    deviceIds = new int[10000];
   }
 
-  public static BatchData createBatchData(
-      TSDataType dataType, boolean ascending, boolean isWriteDesc) {
-    if (ascending) {
-      return new BatchData(dataType);
-    } else if (isWriteDesc) {
-      return new DescReadWriteBatchData(dataType);
-    } else {
-      return new DescReadBatchData(dataType);
-    }
+  public void putBoolean(long t, boolean v, int deviceId) {
+    deviceIds[count] = deviceId;
+    super.putBoolean(t, v);
   }
 
-  public static BatchData createMixedGroupBatchData(
-      TSDataType dataType, boolean ascending, boolean isWriteDesc) {
-    return new MixedGroupBatchData(dataType);
+  public void putInt(long t, int v, int deviceId) {
+    deviceIds[count] = deviceId;
+    super.putInt(t, v);
   }
 
-  public static BatchData createBatchData(TSDataType dataType) {
-    return new BatchData(dataType);
+  public void putLong(long t, long v, int deviceId) {
+    deviceIds[count] = deviceId;
+    super.putLong(t, v);
+  }
+
+  public void putFloat(long t, float v, int deviceId) {
+    deviceIds[count] = deviceId;
+    super.putFloat(t, v);
+  }
+
+  public void putDouble(long t, double v, int deviceId) {
+    deviceIds[count] = deviceId;
+    super.putDouble(t, v);
   }
 }

@@ -24,6 +24,7 @@ import org.apache.iotdb.tsfile.utils.MeasurementGroup;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -88,6 +89,18 @@ public class Schema implements Serializable {
         schemaTemplates.get(templateName).getMeasurementSchemaMap();
     boolean isAligned = schemaTemplates.get(templateName).isAligned();
     registerMeasurementGroup(new Path(deviceId), new MeasurementGroup(isAligned, template));
+  }
+
+  public void registerDeviceGroup(
+      String groupId, List<String> devicePathList, String templateName) {
+    if (!schemaTemplates.containsKey(templateName)) {
+      return;
+    }
+    Map<String, MeasurementSchema> template =
+        schemaTemplates.get(templateName).getMeasurementSchemaMap();
+
+    boolean isAligned = schemaTemplates.get(templateName).isAligned();
+    this.registeredTimeseries.put(new Path(groupId), new MeasurementGroup(isAligned, template));
   }
 
   public MeasurementGroup getSeriesSchema(Path devicePath) {

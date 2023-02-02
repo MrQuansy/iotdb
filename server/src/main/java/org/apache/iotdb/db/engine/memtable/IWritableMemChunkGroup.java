@@ -49,6 +49,9 @@ public interface IWritableMemChunkGroup {
       List<Integer> failedIndices,
       List<IMeasurementSchema> schemaList);
 
+  default void write(
+      long insertTime, Object[] objectValue, List<IMeasurementSchema> schemaList, byte deviceId) {};
+
   Map<String, IWritableMemChunk> getMemChunkMap();
 
   int delete(

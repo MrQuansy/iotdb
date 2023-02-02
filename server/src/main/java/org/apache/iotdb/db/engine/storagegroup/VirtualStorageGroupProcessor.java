@@ -891,6 +891,9 @@ public class VirtualStorageGroupProcessor {
               > lastFlushTimeManager.getFlushedTime(
                   timePartitionId, insertRowPlan.getDevicePath().getFullPath());
 
+      // todo sequence determine
+      isSequence = true;
+
       // is unsequence and user set config to discard out of order data
       if (!isSequence
           && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {

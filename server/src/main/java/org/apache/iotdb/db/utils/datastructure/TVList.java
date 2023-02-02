@@ -84,6 +84,27 @@ public abstract class TVList {
     return null;
   }
 
+  // todo
+  public static TVList newMixedGroupTVList(TSDataType dataType) {
+    switch (dataType) {
+      case TEXT:
+        return new BinaryTVList();
+      case FLOAT:
+        return new FloatTVList();
+      case INT32:
+        return new MixedGroupIntTVList();
+      case INT64:
+        return new MixedGroupLongTVList();
+      case DOUBLE:
+        return new DoubleTVList();
+      case BOOLEAN:
+        return new BooleanTVList();
+      default:
+        break;
+    }
+    return null;
+  }
+
   public static long tvListArrayMemCost(TSDataType type) {
     long size = 0;
     // time array mem size
@@ -94,6 +115,22 @@ public abstract class TVList {
     size += NUM_BYTES_ARRAY_HEADER * 2;
     // Object references size in ArrayList
     size += NUM_BYTES_OBJECT_REF * 2;
+    return size;
+  }
+
+  public static long tvListArrayMemCost(boolean isMixedGroup, TSDataType type) {
+    long size = 0;
+    if (isMixedGroup) {
+      // time array mem size
+      size += (long) PrimitiveArrayManager.ARRAY_SIZE * 8L;
+      // value array mem size
+      size += (long) PrimitiveArrayManager.ARRAY_SIZE * (long) type.getDataTypeSize();
+      size += (long) PrimitiveArrayManager.ARRAY_SIZE * (long) Byte.BYTES;
+      // two array headers mem size
+      size += NUM_BYTES_ARRAY_HEADER * 3;
+      // Object references size in ArrayList
+      size += NUM_BYTES_OBJECT_REF * 3;
+    } else size = tvListArrayMemCost(type);
     return size;
   }
 
@@ -120,6 +157,10 @@ public abstract class TVList {
     int arrayIndex = index / ARRAY_SIZE;
     int elementIndex = index % ARRAY_SIZE;
     return timestamps.get(arrayIndex)[elementIndex];
+  }
+
+  public byte getDeviceIdentifier(int index) {
+    return -1;
   }
 
   public void putLong(long time, long value) {
@@ -528,13 +569,22 @@ public abstract class TVList {
     return new Ite(floatPrecision, encoding, size, deletionList);
   }
 
+  public IPointReader getIterator(
+      int floatPrecision,
+      TSEncoding encoding,
+      int size,
+      List<TimeRange> deletionList,
+      byte deviceIdentifier) {
+    return new Ite(floatPrecision, encoding, size, deletionList);
+  }
+
   protected class Ite implements IPointReader {
 
     protected TimeValuePair cachedTimeValuePair;
     protected boolean hasCachedPair;
     protected int cur;
     protected Integer floatPrecision;
-    private TSEncoding encoding;
+    protected TSEncoding encoding;
     private int deleteCursor = 0;
     /**
      * because TV list may be share with different query, each iterator has to record it's own size
@@ -617,5 +667,25 @@ public abstract class TVList {
 
   public long getLastTime() {
     return getTime(rowCount - 1);
+  }
+
+  public void putInt(long time, int value, byte deviceIdentifier) {
+    putInt(time, value);
+  }
+
+  public void putLong(long time, long value, int deviceId) {
+    putLong(time, value);
+  }
+
+  public void putBoolean(long time, boolean value, int deviceId) {
+    putBoolean(time, value);
+  }
+
+  public void putFloat(long time, float value, int deviceId) {
+    putFloat(time, value);
+  }
+
+  public void putDouble(long time, double value, int deviceId) {
+    putDouble(time, value);
   }
 }

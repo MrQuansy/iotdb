@@ -28,11 +28,13 @@ import org.apache.iotdb.service.rpc.thrift.TSAppendSchemaTemplateReq;
 import org.apache.iotdb.service.rpc.thrift.TSBackupConfigurationResp;
 import org.apache.iotdb.service.rpc.thrift.TSConnectionInfoResp;
 import org.apache.iotdb.service.rpc.thrift.TSCreateAlignedTimeseriesReq;
+import org.apache.iotdb.service.rpc.thrift.TSCreateMixedGroupTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateMultiTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateSchemaTemplateReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSDeleteDataReq;
 import org.apache.iotdb.service.rpc.thrift.TSDropSchemaTemplateReq;
+import org.apache.iotdb.service.rpc.thrift.TSInsertMixedGroupRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsOfOneDeviceReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsReq;
@@ -600,6 +602,27 @@ public class Session {
     defaultSessionConnection.createAlignedTimeseries(request);
   }
 
+  public void createMixedGroupTimeseries(
+      String groupId,
+      List<String> measurements,
+      List<TSDataType> dataTypes,
+      List<TSEncoding> encodings,
+      List<CompressionType> compressors,
+      List<String> measurementAliasList,
+      List<String> deviceIdentifierList)
+      throws IoTDBConnectionException, StatementExecutionException {
+    TSCreateMixedGroupTimeseriesReq request =
+        getTSCreateMixedGroupTimeseriesReq(
+            groupId,
+            measurements,
+            dataTypes,
+            encodings,
+            compressors,
+            measurementAliasList,
+            deviceIdentifierList);
+    defaultSessionConnection.createMixedGroupTimeseries(request);
+  }
+
   private TSCreateAlignedTimeseriesReq getTSCreateAlignedTimeseriesReq(
       String prefixPath,
       List<String> measurements,
@@ -615,6 +638,26 @@ public class Session {
     request.setCompressors(
         compressors.stream().map(i -> (int) i.serialize()).collect(Collectors.toList()));
     request.setMeasurementAlias(measurementAliasList);
+    return request;
+  }
+
+  private TSCreateMixedGroupTimeseriesReq getTSCreateMixedGroupTimeseriesReq(
+      String prefixPath,
+      List<String> measurements,
+      List<TSDataType> dataTypes,
+      List<TSEncoding> encodings,
+      List<CompressionType> compressors,
+      List<String> measurementAliasList,
+      List<String> deviceIdentifierList) {
+    TSCreateMixedGroupTimeseriesReq request = new TSCreateMixedGroupTimeseriesReq();
+    request.setPrefixPath(prefixPath);
+    request.setMeasurements(measurements);
+    request.setDataTypes(dataTypes.stream().map(TSDataType::ordinal).collect(Collectors.toList()));
+    request.setEncodings(encodings.stream().map(TSEncoding::ordinal).collect(Collectors.toList()));
+    request.setCompressors(
+        compressors.stream().map(i -> (int) i.serialize()).collect(Collectors.toList()));
+    request.setMeasurementAlias(measurementAliasList);
+    request.setDeviceIdInGroup(deviceIdentifierList);
     return request;
   }
 
@@ -880,6 +923,15 @@ public class Session {
     }
   }
 
+  private void insertRecord(String deviceId, TSInsertMixedGroupRecordReq request)
+      throws IoTDBConnectionException, StatementExecutionException {
+    try {
+      getSessionConnection(deviceId).insertRecord(request);
+    } catch (RedirectException e) {
+      handleRedirection(deviceId, e.getEndPoint());
+    }
+  }
+
   private SessionConnection getSessionConnection(String deviceId) {
     EndPoint endPoint;
     if (enableCacheLeader
@@ -1049,6 +1101,30 @@ public class Session {
     insertRecord(deviceId, request);
   }
 
+  public void insertMixedGroupRecord(
+      String deviceId,
+      long time,
+      List<String> measurements,
+      List<TSDataType> types,
+      List<Object> values,
+      byte deviceIdentifierInGroup)
+      throws IoTDBConnectionException, StatementExecutionException {
+    TSInsertMixedGroupRecordReq request;
+    try {
+      request =
+          filterAndGenTSInsertMixedGroupRecordReq(
+              deviceId, time, measurements, types, values, false, deviceIdentifierInGroup);
+    } catch (NoValidValueException e) {
+      logger.warn(
+          "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
+          deviceId,
+          time,
+          measurements.toString());
+      return;
+    }
+    insertRecord(deviceId, request);
+  }
+
   private TSInsertRecordReq filterAndGenTSInsertRecordReq(
       String prefixPath,
       long time,
@@ -1085,6 +1161,49 @@ public class Session {
     ByteBuffer buffer = SessionUtils.getValueBuffer(types, values);
     request.setValues(buffer);
     request.setIsAligned(isAligned);
+    return request;
+  }
+
+  private TSInsertMixedGroupRecordReq filterAndGenTSInsertMixedGroupRecordReq(
+      String prefixPath,
+      long time,
+      List<String> measurements,
+      List<TSDataType> types,
+      List<Object> values,
+      boolean isAligned,
+      byte deviceIdentifierInGroup)
+      throws IoTDBConnectionException {
+    if (hasNull(values)) {
+      measurements = new ArrayList<>(measurements);
+      values = new ArrayList<>(values);
+      types = new ArrayList<>(types);
+      boolean isAllValuesNull =
+          filterNullValueAndMeasurement(prefixPath, measurements, types, values);
+      if (isAllValuesNull) {
+        throw new NoValidValueException("All inserted data is null.");
+      }
+    }
+    return genTSInsertMixedGroupRecordReq(
+        prefixPath, time, measurements, types, values, isAligned, deviceIdentifierInGroup);
+  }
+
+  private TSInsertMixedGroupRecordReq genTSInsertMixedGroupRecordReq(
+      String prefixPath,
+      long time,
+      List<String> measurements,
+      List<TSDataType> types,
+      List<Object> values,
+      boolean isAligned,
+      byte deviceIdentifierInGroup)
+      throws IoTDBConnectionException {
+    TSInsertMixedGroupRecordReq request = new TSInsertMixedGroupRecordReq();
+    request.setPrefixPath(prefixPath);
+    request.setTimestamp(time);
+    request.setMeasurements(measurements);
+    ByteBuffer buffer = SessionUtils.getValueBuffer(types, values);
+    request.setValues(buffer);
+    request.setIsAligned(isAligned);
+    request.setDeviceIdentifier(deviceIdentifierInGroup);
     return request;
   }
 

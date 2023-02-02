@@ -43,8 +43,11 @@ public enum TSDataType {
   /** TEXT */
   TEXT((byte) 5),
 
+  /** byte */
+  BYTE((byte) 6),
+
   /** VECTOR */
-  VECTOR((byte) 6);
+  VECTOR((byte) 7);
 
   private final byte type;
 
@@ -102,6 +105,7 @@ public enum TSDataType {
   public int getDataTypeSize() {
     switch (this) {
       case BOOLEAN:
+      case BYTE:
         return 1;
       case INT32:
       case FLOAT:

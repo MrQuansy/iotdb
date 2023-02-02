@@ -65,7 +65,7 @@ public class MeasurementPath extends PartialPath {
 
   private static final Logger logger = LoggerFactory.getLogger(MeasurementPath.class);
 
-  private IMeasurementSchema measurementSchema;
+  protected IMeasurementSchema measurementSchema;
 
   private boolean isUnderAlignedEntity = false;
 

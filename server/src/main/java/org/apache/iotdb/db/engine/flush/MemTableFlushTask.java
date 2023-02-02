@@ -231,6 +231,7 @@ public class MemTableFlushTask {
               break;
             } else {
               long starTime = System.currentTimeMillis();
+              // long starTime = System.nanoTime();
               IWritableMemChunk writableMemChunk = (IWritableMemChunk) task;
               IChunkWriter seriesWriter = writableMemChunk.createIChunkWriter();
               writableMemChunk.encode(seriesWriter);
@@ -243,6 +244,8 @@ public class MemTableFlushTask {
                 Thread.currentThread().interrupt();
               }
               memSerializeTime += System.currentTimeMillis() - starTime;
+              // System.out.println(System.nanoTime());
+              // memSerializeTime += System.nanoTime() - starTime;
             }
           }
           try {

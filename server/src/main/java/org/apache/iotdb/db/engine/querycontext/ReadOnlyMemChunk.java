@@ -46,23 +46,23 @@ import java.util.Map;
 public class ReadOnlyMemChunk {
 
   // deletion list for this chunk
-  private final List<TimeRange> deletionList;
+  protected List<TimeRange> deletionList;
 
-  private String measurementUid;
-  private TSDataType dataType;
-  private TSEncoding encoding;
+  protected String measurementUid;
+  protected TSDataType dataType;
+  protected TSEncoding encoding;
 
   private static final Logger logger = LoggerFactory.getLogger(ReadOnlyMemChunk.class);
 
-  private int floatPrecision = TSFileDescriptor.getInstance().getConfig().getFloatPrecision();
+  protected int floatPrecision = TSFileDescriptor.getInstance().getConfig().getFloatPrecision();
 
   protected IChunkMetadata cachedMetaData;
 
-  private TVList chunkData;
+  protected TVList chunkData;
 
   protected IPointReader chunkPointReader;
 
-  private int chunkDataSize;
+  protected int chunkDataSize;
 
   public ReadOnlyMemChunk() {
     this.deletionList = null;
@@ -106,7 +106,7 @@ public class ReadOnlyMemChunk {
     initChunkMeta();
   }
 
-  private void initChunkMeta() throws IOException, QueryProcessException {
+  protected void initChunkMeta() throws IOException, QueryProcessException {
     Statistics statsByType = Statistics.getStatsByType(dataType);
     IChunkMetadata metaData = new ChunkMetadata(measurementUid, dataType, 0, statsByType);
     if (!isEmpty()) {

@@ -981,7 +981,7 @@ public class TsFileSequenceReader implements AutoCloseable {
   }
 
   /* This method will not only deserialize the TimeseriesMetadata, but also all the chunk metadata list meanwhile. */
-  private List<TimeseriesMetadata> getDeviceTimeseriesMetadata(String device) throws IOException {
+  public List<TimeseriesMetadata> getDeviceTimeseriesMetadata(String device) throws IOException {
     MetadataIndexNode metadataIndexNode = tsFileMetaData.getMetadataIndex();
     Pair<MetadataIndexEntry, Long> metadataIndexPair =
         getMetadataAndEndOffset(metadataIndexNode, device, true, true);
@@ -1258,7 +1258,7 @@ public class TsFileSequenceReader implements AutoCloseable {
    * @param totalSize the size of data that want to read
    * @return data that been read.
    */
-  protected ByteBuffer readData(long position, int totalSize) throws IOException {
+  public ByteBuffer readData(long position, int totalSize) throws IOException {
     int allocateSize = Math.min(MAX_READ_BUFFER_SIZE, totalSize);
     int allocateNum = (int) Math.ceil((double) totalSize / allocateSize);
     ByteBuffer buffer = ByteBuffer.allocate(totalSize);
@@ -1299,7 +1299,7 @@ public class TsFileSequenceReader implements AutoCloseable {
    * @param end the end position of data that want to read
    * @return data that been read.
    */
-  protected ByteBuffer readData(long start, long end) throws IOException {
+  public ByteBuffer readData(long start, long end) throws IOException {
     try {
       return readData(start, (int) (end - start));
     } catch (Throwable t) {

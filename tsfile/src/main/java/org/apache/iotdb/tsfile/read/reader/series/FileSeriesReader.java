@@ -18,6 +18,7 @@
  */
 package org.apache.iotdb.tsfile.read.reader.series;
 
+import org.apache.iotdb.tsfile.file.MetaMarker;
 import org.apache.iotdb.tsfile.file.metadata.AlignedChunkMetadata;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetadata;
 import org.apache.iotdb.tsfile.file.metadata.IChunkMetadata;
@@ -26,6 +27,7 @@ import org.apache.iotdb.tsfile.read.controller.IChunkLoader;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.chunk.AlignedChunkReader;
 import org.apache.iotdb.tsfile.read.reader.chunk.ChunkReader;
+import org.apache.iotdb.tsfile.read.reader.chunk.MixedGroupChunkReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,7 +48,14 @@ public class FileSeriesReader extends AbstractFileSeriesReader {
   protected void initChunkReader(IChunkMetadata chunkMetaData) throws IOException {
     if (chunkMetaData instanceof ChunkMetadata) {
       Chunk chunk = chunkLoader.loadChunk((ChunkMetadata) chunkMetaData);
-      this.chunkReader = new ChunkReader(chunk, filter);
+      if (chunk.getHeader().getChunkType() == MetaMarker.CHUNK_HEADER
+          || chunk.getHeader().getChunkType() == MetaMarker.ONLY_ONE_PAGE_CHUNK_HEADER) {
+        this.chunkReader = new ChunkReader(chunk, filter);
+      } else if (chunk.getHeader().getChunkType() == MetaMarker.MIXED_GROUP_CHUNK_HEADER
+          || chunk.getHeader().getChunkType()
+              == MetaMarker.ONLY_ONE_PAGE_MIXED_GROUP_CHUNK_HEADER) {
+        this.chunkReader = new MixedGroupChunkReader(chunk, filter);
+      }
     } else {
       AlignedChunkMetadata alignedChunkMetadata = (AlignedChunkMetadata) chunkMetaData;
       Chunk timeChunk =

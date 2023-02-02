@@ -26,7 +26,9 @@ import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.utils.MeasurementGroup;
 import org.apache.iotdb.tsfile.write.chunk.AlignedChunkGroupWriterImpl;
 import org.apache.iotdb.tsfile.write.chunk.IChunkGroupWriter;
+import org.apache.iotdb.tsfile.write.chunk.MixedGroupChunkGroupWriterImpl;
 import org.apache.iotdb.tsfile.write.chunk.NonAlignedChunkGroupWriterImpl;
+import org.apache.iotdb.tsfile.write.record.GroupTablet;
 import org.apache.iotdb.tsfile.write.record.TSRecord;
 import org.apache.iotdb.tsfile.write.record.Tablet;
 import org.apache.iotdb.tsfile.write.record.datapoint.DataPoint;
@@ -228,6 +230,20 @@ public class TsFileWriter implements AutoCloseable {
     schema.registerDevice(deviceId, templateName);
   }
 
+  public void registerDeviceGroup(String groupId, List<String> devicePathList, String templateName)
+      throws WriteProcessException {
+    if (!schema.getSchemaTemplates().containsKey(templateName)) {
+      throw new WriteProcessException("given template is not existed! " + templateName);
+    }
+    if (schema.getRegisteredTimeseriesMap().containsKey(new Path(groupId))) {
+      throw new WriteProcessException(
+          "this device "
+              + groupId
+              + " has been registered, you can only use registerDevice method to register empty device.");
+    }
+    schema.registerDeviceGroup(groupId, devicePathList, templateName);
+  }
+
   /**
    * Register nonAligned timeseries by single.
    *
@@ -380,6 +396,19 @@ public class TsFileWriter implements AutoCloseable {
     }
   }
 
+  private void checkIsDeviceGroupExist(GroupTablet tablet)
+      throws NoMeasurementException, IOException {
+    IChunkGroupWriter groupWriter = tryToInitialDeviceGroupWriter(tablet.deviceId);
+
+    Path groupPath = new Path(tablet.deviceId);
+    List<MeasurementSchema> schemas = tablet.getSchemas();
+    if (schema.containsDevice(groupPath)) {
+      groupWriter.tryToAddSeriesWriter(schemas);
+    } else {
+      throw new NoMeasurementException("input devicePath is invalid: " + groupPath.getFullPath());
+    }
+  }
+
   /**
    * If it's aligned, then all measurementSchemas should be contained in the measurementGroup, or it
    * will throw exception. If it's nonAligned, then remove the measurementSchema that is not
@@ -478,6 +507,24 @@ public class TsFileWriter implements AutoCloseable {
     return groupWriter;
   }
 
+  private IChunkGroupWriter tryToInitialDeviceGroupWriter(String groupId) {
+    IChunkGroupWriter groupWriter;
+    if (!groupWriters.containsKey(groupId)) {
+      groupWriter = new MixedGroupChunkGroupWriterImpl(groupId);
+      //      if (!isUnseq) { // Sequence File
+      //        ((NonAlignedChunkGroupWriterImpl) groupWriter)
+      //                .setLastTimeMap(
+      //                        nonAlignedTimeseriesLastTimeMap.getOrDefault(deviceId, new
+      // HashMap<>()));
+      //      }
+      groupWriters.put(groupId, groupWriter);
+    } else {
+      groupWriter = groupWriters.get(groupId);
+    }
+
+    return groupWriter;
+  }
+
   /**
    * write a record in type of T.
    *
@@ -509,6 +556,12 @@ public class TsFileWriter implements AutoCloseable {
     // make sure the ChunkGroupWriter for this Tablet exist
     checkIsTimeseriesExist(tablet, false);
     // get corresponding ChunkGroupWriter and write this Tablet
+    recordCount += groupWriters.get(tablet.deviceId).write(tablet);
+    return checkMemorySizeAndMayFlushChunks();
+  }
+
+  public boolean writeGroup(GroupTablet tablet) throws IOException, WriteProcessException {
+    checkIsDeviceGroupExist(tablet);
     recordCount += groupWriters.get(tablet.deviceId).write(tablet);
     return checkMemorySizeAndMayFlushChunks();
   }
@@ -597,7 +650,7 @@ public class TsFileWriter implements AutoCloseable {
             this.alignedDeviceLastTimeMap.put(
                 deviceId, ((AlignedChunkGroupWriterImpl) groupWriter).getLastTime());
           }
-        } else {
+        } else if (groupWriter instanceof NonAlignedChunkGroupWriterImpl) {
           // add lastTime
           if (!isUnseq) { // Sequence TsFile
             this.nonAlignedTimeseriesLastTimeMap.put(

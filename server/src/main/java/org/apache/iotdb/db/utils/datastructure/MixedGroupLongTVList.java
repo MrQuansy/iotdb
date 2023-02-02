@@ -16,23 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.tsfile.common.constant;
 
-public class TsFileConstant {
+package org.apache.iotdb.db.utils.datastructure;
 
-  public static final String TSFILE_SUFFIX = ".tsfile";
-  public static final String TSFILE_HOME = "TSFILE_HOME";
-  public static final String TSFILE_CONF = "TSFILE_CONF";
-  public static final String PATH_ROOT = "root";
-  public static final String TMP_SUFFIX = "tmp";
-  public static final String PATH_SEPARATOR = ".";
-  public static final char PATH_SEPARATOR_CHAR = '.';
-  public static final String PATH_SEPARATER_NO_REGEX = "\\.";
-  public static final char DOUBLE_QUOTE = '"';
+public class MixedGroupLongTVList extends LongTVList {
 
-  public static final byte TIME_COLUMN_MASK = (byte) 0x80;
-  public static final byte VALUE_COLUMN_MASK = (byte) 0x40;
-  public static final byte MIXED_GROUP_COLUMN_MASK = (byte) 0x20;
+  byte[] deviceIdList;
 
-  private TsFileConstant() {}
+  // todo
+  public MixedGroupLongTVList() {
+    deviceIdList = new byte[10];
+  }
+
+  @Override
+  public void putLong(long time, long value, int deviceId) {
+    deviceIdList[rowCount] = (byte) deviceId;
+    putLong(time, value);
+  }
+
+  @Override
+  public byte getDeviceIdentifier(int index) {
+    return deviceIdList[index];
+  }
 }

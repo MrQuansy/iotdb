@@ -16,23 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.tsfile.common.constant;
 
-public class TsFileConstant {
+package org.apache.iotdb.tsfile.write.record;
 
-  public static final String TSFILE_SUFFIX = ".tsfile";
-  public static final String TSFILE_HOME = "TSFILE_HOME";
-  public static final String TSFILE_CONF = "TSFILE_CONF";
-  public static final String PATH_ROOT = "root";
-  public static final String TMP_SUFFIX = "tmp";
-  public static final String PATH_SEPARATOR = ".";
-  public static final char PATH_SEPARATOR_CHAR = '.';
-  public static final String PATH_SEPARATER_NO_REGEX = "\\.";
-  public static final char DOUBLE_QUOTE = '"';
+import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 
-  public static final byte TIME_COLUMN_MASK = (byte) 0x80;
-  public static final byte VALUE_COLUMN_MASK = (byte) 0x40;
-  public static final byte MIXED_GROUP_COLUMN_MASK = (byte) 0x20;
+import java.util.List;
 
-  private TsFileConstant() {}
+public class GroupTablet extends Tablet {
+
+  public int[] deviceIds;
+
+  public GroupTablet(String deviceId, List<MeasurementSchema> schemas) {
+    super(deviceId, schemas);
+    deviceIds = new int[DEFAULT_SIZE];
+  }
+
+  public GroupTablet(String deviceId, List<MeasurementSchema> schemas, int maxRowNumber) {
+    super(deviceId, schemas, maxRowNumber);
+    deviceIds = new int[maxRowNumber];
+  }
+
+  public void addDeviceId(int rowIndex, int deviceId) {
+    deviceIds[rowIndex] = deviceId;
+  }
 }

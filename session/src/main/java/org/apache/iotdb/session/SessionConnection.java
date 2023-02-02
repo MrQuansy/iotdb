@@ -31,6 +31,7 @@ import org.apache.iotdb.service.rpc.thrift.TSBackupConfigurationResp;
 import org.apache.iotdb.service.rpc.thrift.TSCloseSessionReq;
 import org.apache.iotdb.service.rpc.thrift.TSConnectionInfoResp;
 import org.apache.iotdb.service.rpc.thrift.TSCreateAlignedTimeseriesReq;
+import org.apache.iotdb.service.rpc.thrift.TSCreateMixedGroupTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateMultiTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateSchemaTemplateReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateTimeseriesReq;
@@ -40,6 +41,7 @@ import org.apache.iotdb.service.rpc.thrift.TSExecuteStatementReq;
 import org.apache.iotdb.service.rpc.thrift.TSExecuteStatementResp;
 import org.apache.iotdb.service.rpc.thrift.TSGetSystemStatusResp;
 import org.apache.iotdb.service.rpc.thrift.TSIService;
+import org.apache.iotdb.service.rpc.thrift.TSInsertMixedGroupRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsOfOneDeviceReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsReq;
@@ -326,6 +328,25 @@ public class SessionConnection {
     }
   }
 
+  protected void createMixedGroupTimeseries(TSCreateMixedGroupTimeseriesReq request)
+      throws IoTDBConnectionException, StatementExecutionException {
+    request.setSessionId(sessionId);
+    try {
+      verifySuccessWrapper(client.createMixedGroupTimeseries(request));
+    } catch (TException e) {
+      if (reconnect()) {
+        try {
+          request.setSessionId(sessionId);
+          verifySuccessWrapper(client.createMixedGroupTimeseries(request));
+        } catch (TException tException) {
+          throw new IoTDBConnectionException(tException);
+        }
+      } else {
+        throw new IoTDBConnectionException(logForReconnectionFailure());
+      }
+    }
+  }
+
   protected void createMultiTimeseries(TSCreateMultiTimeseriesReq request)
       throws IoTDBConnectionException, StatementExecutionException {
     request.setSessionId(sessionId);
@@ -506,6 +527,25 @@ public class SessionConnection {
         try {
           request.setSessionId(sessionId);
           verifySuccessWrapper(client.insertRecord(request));
+        } catch (TException tException) {
+          throw new IoTDBConnectionException(tException);
+        }
+      } else {
+        throw new IoTDBConnectionException(logForReconnectionFailure());
+      }
+    }
+  }
+
+  protected void insertRecord(TSInsertMixedGroupRecordReq request)
+      throws IoTDBConnectionException, StatementExecutionException, RedirectException {
+    request.setSessionId(sessionId);
+    try {
+      verifySuccessWithRedirectionWrapper(client.insertMixedGroupRecord(request));
+    } catch (TException e) {
+      if (reconnect()) {
+        try {
+          request.setSessionId(sessionId);
+          verifySuccessWrapper(client.insertMixedGroupRecord(request));
         } catch (TException tException) {
           throw new IoTDBConnectionException(tException);
         }

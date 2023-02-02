@@ -59,6 +59,18 @@ public class MemUtils {
    * function for getting the value size. If mem control enabled, do not add text data size here,
    * the size will be added to memtable before inserting.
    */
+  public static long getMixedGroupRecordSize(
+      TSDataType dataType, Object value, boolean addingTextDataSize) {
+    if (dataType == TSDataType.TEXT) {
+      return 9L + (addingTextDataSize ? getBinarySize((Binary) value) : 0);
+    }
+    return 9L + dataType.getDataTypeSize();
+  }
+
+  /**
+   * function for getting the value size. If mem control enabled, do not add text data size here,
+   * the size will be added to memtable before inserting.
+   */
   public static long getRecordsSize(
       List<TSDataType> dataTypes, Object[] value, boolean addingTextDataSize) {
     int emptyRecordCount = 0;
@@ -69,6 +81,26 @@ public class MemUtils {
         continue;
       }
       memSize += getRecordSize(dataTypes.get(i - emptyRecordCount), value[i], addingTextDataSize);
+    }
+    return memSize;
+  }
+
+  /**
+   * function for getting the value size. If mem control enabled, do not add text data size here,
+   * the size will be added to memtable before inserting.
+   */
+  public static long getMixedGroupRecordsSize(
+      List<TSDataType> dataTypes, Object[] value, boolean addingTextDataSize) {
+    int emptyRecordCount = 0;
+    long memSize = 0L;
+    for (int i = 0; i < value.length; i++) {
+      if (value[i] == null) {
+        emptyRecordCount++;
+        continue;
+      }
+      memSize +=
+          getMixedGroupRecordSize(
+              dataTypes.get(i - emptyRecordCount), value[i], addingTextDataSize);
     }
     return memSize;
   }

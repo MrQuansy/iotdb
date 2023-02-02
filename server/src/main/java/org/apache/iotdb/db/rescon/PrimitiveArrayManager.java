@@ -69,6 +69,7 @@ public class PrimitiveArrayManager {
         new AtomicLong(0),
         new AtomicLong(0),
         new AtomicLong(0),
+        new AtomicLong(0),
         new AtomicLong(0)
       };
 
@@ -212,6 +213,9 @@ public class PrimitiveArrayManager {
       case BOOLEAN:
         dataArray = new boolean[ARRAY_SIZE];
         break;
+      case BYTE:
+        dataArray = new byte[ARRAY_SIZE];
+        break;
       case INT32:
         dataArray = new int[ARRAY_SIZE];
         break;
@@ -316,6 +320,12 @@ public class PrimitiveArrayManager {
           binaries[i] = new Binary[ARRAY_SIZE];
         }
         return binaries;
+      case BYTE:
+        byte[][] bytes = new byte[arrayNumber][];
+        for (int i = 0; i < arrayNumber; i++) {
+          bytes[i] = new byte[ARRAY_SIZE];
+        }
+        return bytes;
       default:
         throw new UnSupportedDataTypeException(dataType.name());
     }

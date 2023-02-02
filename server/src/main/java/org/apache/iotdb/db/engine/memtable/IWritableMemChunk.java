@@ -60,6 +60,8 @@ public interface IWritableMemChunk {
 
   void write(long insertTime, Object objectValue);
 
+  default void write(long insertTime, Object value, byte deviceId) {}
+
   void writeAlignedValue(
       long insertTime,
       Object[] objectValue,

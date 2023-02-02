@@ -67,6 +67,15 @@ public interface IMemTable {
 
   void writeAlignedTablet(InsertTabletPlan insertTabletPlan, int start, int end);
 
+  default void writeMixedGroup(
+      InsertTabletPlan insertTabletPlan, int start, int end, int deviceId) {}
+
+  default void writeMixedGroup(
+      IDeviceID groupId,
+      List<IMeasurementSchema> schemaList,
+      byte deviceId,
+      long insertTime,
+      Object[] objectValue) {}
   /** @return the number of points */
   long size();
 

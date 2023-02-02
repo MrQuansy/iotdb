@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class Tablet {
 
-  private static final int DEFAULT_SIZE = 1024;
+  protected static final int DEFAULT_SIZE = 1024;
   private static final String NOT_SUPPORT_DATATYPE = "Data type %s is not supported.";
 
   /** deviceId of this tablet */

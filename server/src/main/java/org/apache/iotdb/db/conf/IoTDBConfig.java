@@ -159,6 +159,7 @@ public class IoTDBConfig {
 
   private boolean enableDiscardOutOfOrderData = false;
 
+  private boolean enableMixedGroup = true;
   /**
    * When a certain amount of write ahead logs is reached, they will be flushed to the disk. It is
    * possible to lose at most flush_wal_threshold operations.
@@ -703,7 +704,7 @@ public class IoTDBConfig {
   private long defaultTTL = Long.MAX_VALUE;
 
   /** The default value of primitive array size in array pool */
-  private int primitiveArraySize = 32;
+  private int primitiveArraySize = 10;
 
   /** whether enable data partition. If disabled, all data belongs to partition 0 */
   private boolean enablePartition = false;
@@ -1165,6 +1166,14 @@ public class IoTDBConfig {
 
   public void setEnableDiscardOutOfOrderData(boolean enableDiscardOutOfOrderData) {
     this.enableDiscardOutOfOrderData = enableDiscardOutOfOrderData;
+  }
+
+  public boolean isEnableMixedGroup() {
+    return enableMixedGroup;
+  }
+
+  public void setEnableMixedGroup(boolean enableMixedGroup) {
+    this.enableMixedGroup = enableMixedGroup;
   }
 
   public int getFlushWalThreshold() {

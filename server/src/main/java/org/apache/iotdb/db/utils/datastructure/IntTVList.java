@@ -34,11 +34,11 @@ public class IntTVList extends TVList {
 
   // list of primitive array, add 1 when expanded -> int primitive array
   // index relation: arrayIndex -> elementIndex
-  private List<int[]> values;
+  protected List<int[]> values;
 
-  private int[][] sortedValues;
+  protected int[][] sortedValues;
 
-  private int pivotValue;
+  protected int pivotValue;
 
   IntTVList() {
     super();
@@ -89,7 +89,7 @@ public class IntTVList extends TVList {
     return cloneList;
   }
 
-  private int[] cloneValue(int[] array) {
+  protected int[] cloneValue(int[] array) {
     int[] cloneArray = new int[array.length];
     System.arraycopy(array, 0, cloneArray, 0, array.length);
     return cloneArray;

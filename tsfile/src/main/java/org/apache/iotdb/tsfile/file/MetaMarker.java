@@ -46,6 +46,12 @@ public class MetaMarker {
   /** Chunk header marker and this chunk has only one page. */
   public static final byte ONLY_ONE_PAGE_CHUNK_HEADER = 5;
 
+  public static final byte MIXED_GROUP_CHUNK_HEADER =
+      (byte) (CHUNK_HEADER | TsFileConstant.MIXED_GROUP_COLUMN_MASK);;
+
+  public static final byte ONLY_ONE_PAGE_MIXED_GROUP_CHUNK_HEADER =
+      (byte) (ONLY_ONE_PAGE_CHUNK_HEADER | TsFileConstant.MIXED_GROUP_COLUMN_MASK);;
+
   /** Time Chunk header marker and this chunk has more than one page. */
   public static final byte TIME_CHUNK_HEADER =
       (byte) (CHUNK_HEADER | TsFileConstant.TIME_COLUMN_MASK);
