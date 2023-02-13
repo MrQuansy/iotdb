@@ -320,7 +320,9 @@ public class InsertRowPlan extends InsertPlan {
         && Objects.equals(devicePath, that.devicePath)
         && Arrays.equals(measurements, that.measurements)
         && Arrays.equals(values, that.values)
-        && Objects.equals(isAligned, that.isAligned);
+        && Objects.equals(isAligned, that.isAligned)
+        && Objects.equals(isMixedGroup, that.isMixedGroup)
+        && Objects.equals(deviceIdentifier, that.deviceIdentifier);
   }
 
   @Override
@@ -363,6 +365,8 @@ public class InsertRowPlan extends InsertPlan {
 
     stream.writeLong(index);
     stream.write((byte) (isAligned ? 1 : 0));
+    stream.write((byte) (isMixedGroup ? 1 : 0));
+    stream.write(deviceIdentifier);
   }
 
   private void putValues(DataOutputStream outputStream) throws QueryProcessException, IOException {
@@ -520,6 +524,8 @@ public class InsertRowPlan extends InsertPlan {
     buffer.putLong(index);
 
     buffer.put((byte) (isAligned ? 1 : 0));
+    buffer.put((byte) (isMixedGroup ? 1 : 0));
+    buffer.put(deviceIdentifier);
   }
 
   @Override
@@ -549,6 +555,8 @@ public class InsertRowPlan extends InsertPlan {
     isNeedInferType = buffer.get() == 1;
     this.index = buffer.getLong();
     isAligned = buffer.get() == 1;
+    isMixedGroup = buffer.get() == 1;
+    deviceIdentifier = buffer.get();
   }
 
   @Override
@@ -613,6 +621,17 @@ public class InsertRowPlan extends InsertPlan {
       if (value == null) {
         throw new QueryProcessException("Values contain null: " + Arrays.toString(values));
       }
+    }
+  }
+
+  @Override
+  public void mapFullPathToMixedGroupPath(PartialPath devicePathAfterMap, byte deviceIdentifier) {
+    super.mapFullPathToMixedGroupPath(devicePathAfterMap, deviceIdentifier);
+
+    paths = new ArrayList<>(measurements.length);
+    for (String m : measurements) {
+      PartialPath fullPath = devicePath.concatNode(m);
+      paths.add(fullPath);
     }
   }
 }

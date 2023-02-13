@@ -30,9 +30,11 @@ import org.apache.iotdb.db.metadata.idtable.entry.TimeseriesID;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
 import org.apache.iotdb.db.metadata.path.AlignedPath;
 import org.apache.iotdb.db.metadata.path.MeasurementPath;
+import org.apache.iotdb.db.metadata.path.MixedGroupPath;
 import org.apache.iotdb.db.metadata.path.PartialPath;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.utils.TestOnly;
 import org.apache.iotdb.tsfile.read.TimeValuePair;
@@ -59,6 +61,7 @@ public interface IDTable {
    */
   void createAlignedTimeseries(CreateAlignedTimeSeriesPlan plan) throws MetadataException;
 
+  void createMixedGroupTimeseries(CreateMixedGroupTimeSeriesPlan plan);
   /**
    * create timeseries
    *
@@ -170,6 +173,16 @@ public interface IDTable {
             DeviceIDFactory.getInstance().getDeviceID(cur).toStringID(),
             cur.getMeasurementList(),
             cur.getSchemaList());
+      }
+
+      if (fullPath instanceof MixedGroupPath) {
+        MixedGroupPath cur = (MixedGroupPath) fullPath;
+
+        return new MixedGroupPath(
+            DeviceIDFactory.getInstance().getDeviceID(cur).toStringID(),
+            cur.getMeasurement(),
+            cur.getMeasurementSchema(),
+            cur.getDeviceIdentifier());
       }
 
       // normal path

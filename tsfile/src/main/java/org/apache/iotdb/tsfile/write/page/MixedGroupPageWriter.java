@@ -199,12 +199,13 @@ public class MixedGroupPageWriter {
   public ByteBuffer getUncompressedBytes() throws IOException {
     prepareEndWriteOnePage();
     ByteBuffer buffer =
-        ByteBuffer.allocate(timeOut.size() + valueOut.size() + deviceColumnOut.size() + 4);
+        ByteBuffer.allocate(timeOut.size() + valueOut.size() + deviceColumnOut.size() + 8);
     // ByteBuffer buffer = ByteBuffer.allocate(timeOut.size() + valueOut.size() + 4);
     ReadWriteForEncodingUtils.writeUnsignedVarInt(timeOut.size(), buffer);
+    ReadWriteForEncodingUtils.writeUnsignedVarInt(valueOut.size(), buffer);
     buffer.put(timeOut.getBuf(), 0, timeOut.size());
-    buffer.put(deviceColumnOut.getBuf(), 0, deviceColumnOut.size());
     buffer.put(valueOut.getBuf(), 0, valueOut.size());
+    buffer.put(deviceColumnOut.getBuf(), 0, deviceColumnOut.size());
     buffer.flip();
     return buffer;
   }

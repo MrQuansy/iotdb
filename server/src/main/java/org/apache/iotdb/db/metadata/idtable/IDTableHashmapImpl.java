@@ -35,6 +35,7 @@ import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertRowPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertTabletPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.service.IoTDB;
 import org.apache.iotdb.db.utils.TestOnly;
@@ -107,6 +108,11 @@ public class IDTableHashmapImpl implements IDTable {
               IDiskSchemaManager);
       deviceEntry.putSchemaEntry(plan.getMeasurements().get(i), schemaEntry);
     }
+  }
+
+  @Override
+  public void createMixedGroupTimeseries(CreateMixedGroupTimeSeriesPlan plan) {
+    // todo
   }
 
   /**

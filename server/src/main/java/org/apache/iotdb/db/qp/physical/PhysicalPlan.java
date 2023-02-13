@@ -42,6 +42,7 @@ import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateContinuousQueryPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateFunctionPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateIndexPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateMultiTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateSnapshotPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTemplatePlan;
@@ -329,6 +330,9 @@ public abstract class PhysicalPlan {
         case CREATE_ALIGNED_TIMESERIES:
           plan = new CreateAlignedTimeSeriesPlan();
           break;
+        case CREATE_MIXED_GROUP_TIMESERIES:
+          plan = new CreateMixedGroupTimeSeriesPlan();
+          break;
         case DELETE_TIMESERIES:
           plan = new DeleteTimeSeriesPlan();
           break;
@@ -543,6 +547,7 @@ public abstract class PhysicalPlan {
     ACTIVATE_TEMPLATE,
     AUTO_CREATE_DEVICE_MNODE,
     CREATE_ALIGNED_TIMESERIES,
+    CREATE_MIXED_GROUP_TIMESERIES,
     CLUSTER_LOG,
     CREATE_TRIGGER,
     DROP_TRIGGER,

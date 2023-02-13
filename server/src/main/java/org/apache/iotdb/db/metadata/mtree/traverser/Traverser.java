@@ -296,6 +296,9 @@ public abstract class Traverser {
       if (node == currentNode) {
         break;
       }
+      if (node.getName() == "") {
+        continue;
+      }
       builder.append(TsFileConstant.PATH_SEPARATOR);
       builder.append(node.getName());
     }

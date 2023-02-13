@@ -233,4 +233,9 @@ public class MixedGroupWritableMemChunk implements IWritableMemChunk {
         throw new UnSupportedDataTypeException(UNSUPPORTED_TYPE + schema.getType());
     }
   }
+
+  @Override
+  public TVList getTVList() {
+    return list;
+  }
 }

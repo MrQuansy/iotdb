@@ -53,6 +53,20 @@ public class MixedGroupChunkGroupWriterImpl implements IChunkGroupWriter {
     return 0;
   }
 
+  public int write(long time, List<DataPoint> data, byte deviceIdentifier) {
+    int pointCount = 0;
+    for (DataPoint point : data) {
+      if (pointCount == 0) {
+        pointCount++;
+      }
+      point.writeTo(
+          time,
+          deviceIdentifier,
+          groupChunkWriters.get(point.getMeasurementId())); // write time and value to page
+    }
+    return pointCount;
+  }
+
   @Override
   public int write(Tablet tablet) throws WriteProcessException, IOException {
     List<MeasurementSchema> timeseries = tablet.getSchemas();

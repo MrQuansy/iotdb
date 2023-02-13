@@ -27,7 +27,6 @@ import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.IDeviceID;
 import org.apache.iotdb.db.metadata.path.PartialPath;
-import org.apache.iotdb.db.qp.physical.crud.InsertMixedGroupRowPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertRowPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertTabletPlan;
 import org.apache.iotdb.db.service.metrics.MetricService;
@@ -214,11 +213,11 @@ public class MixedGroupingMemTable implements IMemTable {
       dataTypes.add(schema.getType());
     }
     memSize += MemUtils.getMixedGroupRecordsSize(dataTypes, values, disableMemControl);
-    if (insertRowPlan instanceof InsertMixedGroupRowPlan) {
+    if (insertRowPlan.isMixedGroup()) {
       writeMixedGroup(
           insertRowPlan.getDeviceID(),
           schemaList,
-          ((InsertMixedGroupRowPlan) insertRowPlan).getDeviceIdentifier(),
+          insertRowPlan.getDeviceIdentifier(),
           insertRowPlan.getTime(),
           values);
     } else {

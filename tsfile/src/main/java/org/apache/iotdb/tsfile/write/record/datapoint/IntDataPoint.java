@@ -20,6 +20,7 @@ package org.apache.iotdb.tsfile.write.record.datapoint;
 
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.write.chunk.ChunkWriterImpl;
+import org.apache.iotdb.tsfile.write.chunk.MixedGroupChunkWriterImpl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,15 @@ public class IntDataPoint extends DataPoint {
       return;
     }
     writer.write(time, value);
+  }
+
+  @Override
+  public void writeTo(long time, byte deviceIdentifier, MixedGroupChunkWriterImpl writer) {
+    if (writer == null) {
+      LOG.warn("given IChunkWriter is null, do nothing and return");
+      return;
+    }
+    writer.write(time, value, deviceIdentifier);
   }
 
   @Override

@@ -33,7 +33,7 @@ public class EntityMNode extends InternalMNode implements IEntityMNode {
    * <p>This will be a ConcurrentHashMap instance
    */
   @SuppressWarnings("squid:S3077")
-  private transient volatile Map<String, IMeasurementMNode> aliasChildren = null;
+  protected transient volatile Map<String, IMeasurementMNode> aliasChildren = null;
 
   private volatile boolean isAligned = false;
 

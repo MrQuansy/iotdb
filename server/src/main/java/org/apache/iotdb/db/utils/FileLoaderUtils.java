@@ -263,4 +263,21 @@ public class FileLoaderUtils {
     IChunkReader chunkReader = chunkLoader.getChunkReader(chunkMetaData, timeFilter);
     return chunkReader.loadPageReaderList();
   }
+
+  /**
+   * load all page readers in one chunk that satisfying the timeFilter
+   *
+   * @param chunkMetaData the corresponding chunk metadata
+   * @param timeFilter it should be a TimeFilter instead of a ValueFilter
+   */
+  public static List<IPageReader> loadMixedGroupPageReaderList(
+      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
+    if (chunkMetaData == null) {
+      throw new IOException("Can't init null chunkMeta");
+    }
+    IChunkLoader chunkLoader = chunkMetaData.getChunkLoader();
+    IChunkReader chunkReader =
+        chunkLoader.getMixedGroupChunkReader(chunkMetaData, timeFilter, deviceIdentifier);
+    return chunkReader.loadPageReaderList();
+  }
 }

@@ -44,6 +44,14 @@ public class FileSeriesReader extends AbstractFileSeriesReader {
     super(chunkLoader, chunkMetadataList, filter);
   }
 
+  public FileSeriesReader(
+      IChunkLoader chunkLoader,
+      List<IChunkMetadata> chunkMetadataList,
+      Filter filter,
+      int deviceIdentifier) {
+    super(chunkLoader, chunkMetadataList, filter, deviceIdentifier);
+  }
+
   @Override
   protected void initChunkReader(IChunkMetadata chunkMetaData) throws IOException {
     if (chunkMetaData instanceof ChunkMetadata) {
@@ -54,7 +62,7 @@ public class FileSeriesReader extends AbstractFileSeriesReader {
       } else if (chunk.getHeader().getChunkType() == MetaMarker.MIXED_GROUP_CHUNK_HEADER
           || chunk.getHeader().getChunkType()
               == MetaMarker.ONLY_ONE_PAGE_MIXED_GROUP_CHUNK_HEADER) {
-        this.chunkReader = new MixedGroupChunkReader(chunk, filter);
+        this.chunkReader = new MixedGroupChunkReader(chunk, filter, deviceIdentifier);
       }
     } else {
       AlignedChunkMetadata alignedChunkMetadata = (AlignedChunkMetadata) chunkMetaData;

@@ -21,6 +21,7 @@ package org.apache.iotdb.db.query.reader.series;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.engine.storagegroup.TsFileResource;
 import org.apache.iotdb.db.metadata.idtable.IDTable;
+import org.apache.iotdb.db.metadata.path.MixedGroupPath;
 import org.apache.iotdb.db.metadata.path.PartialPath;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.QueryTimeManager;
@@ -117,6 +118,10 @@ public class SeriesReader {
   protected boolean hasCachedNextOverlappedPage;
   protected BatchData cachedBatchData;
 
+  private boolean isMixedGroupSeries;
+
+  private byte deviceIdentifier;
+
   /**
    * @param seriesPath For querying aligned series, the seriesPath should be AlignedPath. All
    *     selected series belonging to one aligned device should be all in this one AlignedPath's
@@ -165,6 +170,11 @@ public class SeriesReader {
         new PriorityQueue<>(
             orderUtils.comparingLong(
                 versionPageReader -> orderUtils.getOrderTime(versionPageReader.getStatistics())));
+
+    if (seriesPath instanceof MixedGroupPath) {
+      isMixedGroupSeries = true;
+      deviceIdentifier = ((MixedGroupPath) seriesPath).getDeviceIdentifier();
+    } else isMixedGroupSeries = false;
   }
 
   @TestOnly
@@ -212,6 +222,11 @@ public class SeriesReader {
         new PriorityQueue<>(
             orderUtils.comparingLong(
                 versionPageReader -> orderUtils.getOrderTime(versionPageReader.getStatistics())));
+
+    if (seriesPath instanceof MixedGroupPath) {
+      isMixedGroupSeries = true;
+      deviceIdentifier = ((MixedGroupPath) seriesPath).getDeviceIdentifier();
+    } else isMixedGroupSeries = false;
   }
 
   protected PriorityMergeReader getPriorityMergeReader() {
@@ -583,8 +598,13 @@ public class SeriesReader {
   }
 
   private void unpackOneChunkMetaData(IChunkMetadata chunkMetaData) throws IOException {
-    List<IPageReader> pageReaderList =
-        FileLoaderUtils.loadPageReaderList(chunkMetaData, timeFilter);
+    List<IPageReader> pageReaderList;
+    if (isMixedGroupSeries) {
+      pageReaderList =
+          FileLoaderUtils.loadMixedGroupPageReaderList(chunkMetaData, timeFilter, deviceIdentifier);
+    } else {
+      pageReaderList = FileLoaderUtils.loadPageReaderList(chunkMetaData, timeFilter);
+    }
 
     // for tracing: try to calculate the number of pages
     if (context.isEnableTracing()) {

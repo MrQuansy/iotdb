@@ -44,6 +44,7 @@ import org.apache.iotdb.db.metadata.mnode.IStorageGroupMNode;
 import org.apache.iotdb.db.metadata.mnode.InternalMNode;
 import org.apache.iotdb.db.metadata.mnode.MNodeUtils;
 import org.apache.iotdb.db.metadata.mnode.MeasurementMNode;
+import org.apache.iotdb.db.metadata.mnode.MixedGroupMappingNode;
 import org.apache.iotdb.db.metadata.mnode.StorageGroupMNode;
 import org.apache.iotdb.db.metadata.mtree.traverser.Traverser;
 import org.apache.iotdb.db.metadata.mtree.traverser.collector.CollectorTraverser;
@@ -58,6 +59,7 @@ import org.apache.iotdb.db.metadata.mtree.traverser.counter.MeasurementCounter;
 import org.apache.iotdb.db.metadata.mtree.traverser.counter.MeasurementGroupByLevelCounter;
 import org.apache.iotdb.db.metadata.mtree.traverser.counter.StorageGroupCounter;
 import org.apache.iotdb.db.metadata.path.MeasurementPath;
+import org.apache.iotdb.db.metadata.path.MixedGroupPath;
 import org.apache.iotdb.db.metadata.path.PartialPath;
 import org.apache.iotdb.db.metadata.template.Template;
 import org.apache.iotdb.db.metadata.utils.MetaFormatUtils;
@@ -74,6 +76,7 @@ import org.apache.iotdb.db.qp.physical.sys.StorageGroupMNodePlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.dataset.ShowDevicesResult;
 import org.apache.iotdb.db.utils.TestOnly;
+import org.apache.iotdb.tsfile.common.constant.TsFileConstant;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -579,6 +582,71 @@ public class MTree implements Serializable {
 
       IEntityMNode entityMNode = MNodeUtils.setToEntity(cur);
       entityMNode.setAligned(true);
+
+      for (int i = 0; i < measurements.size(); i++) {
+        IMeasurementMNode measurementMNode =
+            MeasurementMNode.getMeasurementMNode(
+                entityMNode,
+                measurements.get(i),
+                new MeasurementSchema(
+                    measurements.get(i), dataTypes.get(i), encodings.get(i), compressors.get(i)),
+                null);
+        entityMNode.addChild(measurements.get(i), measurementMNode);
+      }
+    }
+  }
+
+  /**
+   * Create mixed group timeseries with full paths from root to one leaf node. Before creating
+   * timeseries, the * storage group should be set first, throw exception otherwise
+   *
+   * @param devicePath device path
+   * @param measurements measurements list
+   * @param dataTypes data types list
+   * @param encodings encodings list
+   * @param compressors compressor
+   */
+  public void createMixedGroupTimeseries(
+      PartialPath devicePath,
+      List<String> measurements,
+      List<TSDataType> dataTypes,
+      List<TSEncoding> encodings,
+      List<CompressionType> compressors)
+      throws MetadataException {
+    MetaFormatUtils.checkSchemaMeasurementNames(measurements);
+    Pair<IMNode, Template> pair = checkAndAutoCreateInternalPath(devicePath);
+    IMNode cur = pair.left;
+    Template upperTemplate = pair.right;
+
+    // synchronize check and add, we need addChild and add Alias become atomic operation
+    // only write on mtree will be synchronized
+    synchronized (this) {
+      pair = checkAndAutoCreateDeviceNode(devicePath.getTailNode(), cur, upperTemplate);
+      cur = pair.left;
+      upperTemplate = pair.right;
+
+      for (String measurement : measurements) {
+        if (cur.hasChild(measurement)) {
+          throw new PathAlreadyExistException(devicePath.getFullPath() + "." + measurement);
+        }
+      }
+
+      if (upperTemplate != null) {
+        for (String measurement : measurements) {
+          if (upperTemplate.getDirectNode(measurement) != null) {
+            throw new TemplateImcompatibeException(
+                devicePath.concatNode(measurement).getFullPath(), upperTemplate.getName());
+          }
+        }
+      }
+
+      if (cur.isEntity() && !cur.getAsEntityMNode().isAligned()) {
+        throw new AlignedTimeseriesException(
+            "Timeseries under this entity is not aligned, please use createTimeseries or change entity.",
+            devicePath.getFullPath());
+      }
+
+      IEntityMNode entityMNode = MNodeUtils.setToMixedGroupEntity(cur);
 
       for (int i = 0; i < measurements.size(); i++) {
         IMeasurementMNode measurementMNode =
@@ -1132,10 +1200,33 @@ public class MTree implements Serializable {
         new MeasurementCollector<List<PartialPath>>(root, pathPattern, limit, offset) {
           @Override
           protected void collectMeasurement(IMeasurementMNode node) throws MetadataException {
-            MeasurementPath path = getCurrentMeasurementPathInTraverse(node);
-            if (nodes[nodes.length - 1].equals(node.getAlias())) {
-              // only when user query with alias, the alias in path will be set
-              path.setMeasurementAlias(node.getAlias());
+            MeasurementPath path;
+            if (node.getParent() instanceof MixedGroupMappingNode) {
+              // todo *
+              // path = getCurrentMeasurementPathInTraverse(node);
+              StringBuilder builder = new StringBuilder(nodes[0]);
+              for (int i = 1; i < nodes.length - 2; i++) {
+                builder.append(TsFileConstant.PATH_SEPARATOR);
+                builder.append(nodes[i]);
+              }
+              builder.append(TsFileConstant.PATH_SEPARATOR);
+              builder.append(node.getName());
+              path =
+                  new MixedGroupPath(
+                      new PartialPath(builder.toString()),
+                      node.getSchema(),
+                      ((MixedGroupMappingNode) (node.getParent()))
+                          .getDeviceIdentifier(nodes[nodes.length - 2], false));
+              if (nodes[nodes.length - 1].equals(node.getAlias())) {
+                // only when user query with alias, the alias in path will be set
+                path.setMeasurementAlias(node.getAlias());
+              }
+            } else {
+              path = getCurrentMeasurementPathInTraverse(node);
+              if (nodes[nodes.length - 1].equals(node.getAlias())) {
+                // only when user query with alias, the alias in path will be set
+                path.setMeasurementAlias(node.getAlias());
+              }
             }
             result.add(path);
           }

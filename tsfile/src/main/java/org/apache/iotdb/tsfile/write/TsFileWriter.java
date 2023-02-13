@@ -28,6 +28,7 @@ import org.apache.iotdb.tsfile.write.chunk.AlignedChunkGroupWriterImpl;
 import org.apache.iotdb.tsfile.write.chunk.IChunkGroupWriter;
 import org.apache.iotdb.tsfile.write.chunk.MixedGroupChunkGroupWriterImpl;
 import org.apache.iotdb.tsfile.write.chunk.NonAlignedChunkGroupWriterImpl;
+import org.apache.iotdb.tsfile.write.record.GroupRecord;
 import org.apache.iotdb.tsfile.write.record.GroupTablet;
 import org.apache.iotdb.tsfile.write.record.TSRecord;
 import org.apache.iotdb.tsfile.write.record.Tablet;
@@ -230,7 +231,7 @@ public class TsFileWriter implements AutoCloseable {
     schema.registerDevice(deviceId, templateName);
   }
 
-  public void registerDeviceGroup(String groupId, List<String> devicePathList, String templateName)
+  public void registerMixedGroup(String groupId, List<String> devicePathList, String templateName)
       throws WriteProcessException {
     if (!schema.getSchemaTemplates().containsKey(templateName)) {
       throw new WriteProcessException("given template is not existed! " + templateName);
@@ -409,6 +410,24 @@ public class TsFileWriter implements AutoCloseable {
     }
   }
 
+  private boolean checkIsDeviceGroupExist(GroupRecord record)
+      throws NoMeasurementException, IOException {
+    IChunkGroupWriter groupWriter = tryToInitialDeviceGroupWriter(record.deviceId);
+
+    Path groupPath = new Path(record.deviceId);
+    List<MeasurementSchema> schemas;
+    if (schema.containsDevice(groupPath)) {
+      schemas =
+          checkIsAllMeasurementsInGroup(
+              record.dataPointList, schema.getSeriesSchema(groupPath), false);
+      groupWriter.tryToAddSeriesWriter(schemas);
+    } else {
+      throw new NoMeasurementException("input devicePath is invalid: " + groupPath.getFullPath());
+    }
+
+    return true;
+  }
+
   /**
    * If it's aligned, then all measurementSchemas should be contained in the measurementGroup, or it
    * will throw exception. If it's nonAligned, then remove the measurementSchema that is not
@@ -542,6 +561,15 @@ public class TsFileWriter implements AutoCloseable {
   public boolean writeAligned(TSRecord record) throws IOException, WriteProcessException {
     checkIsTimeseriesExist(record, true);
     recordCount += groupWriters.get(record.deviceId).write(record.time, record.dataPointList);
+    return checkMemorySizeAndMayFlushChunks();
+  }
+
+  public boolean writeMixedGroupRecord(GroupRecord record)
+      throws IOException, NoMeasurementException {
+    checkIsDeviceGroupExist(record);
+    recordCount +=
+        ((MixedGroupChunkGroupWriterImpl) groupWriters.get(record.deviceId))
+            .write(record.time, record.dataPointList, record.deviceIdentifier);
     return checkMemorySizeAndMayFlushChunks();
   }
 

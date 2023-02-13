@@ -149,7 +149,7 @@ public class TsFileExecutor implements QueryExecutor {
    */
   private QueryDataSet execute(List<Path> selectedPathList)
       throws IOException, NoMeasurementException {
-    return executeMayAttachTimeFiler(selectedPathList, null);
+    return executeMayAttachTimeFiler(selectedPathList, null, null);
   }
 
   /**
@@ -161,7 +161,7 @@ public class TsFileExecutor implements QueryExecutor {
    */
   private QueryDataSet execute(List<Path> selectedPathList, GlobalTimeExpression timeFilter)
       throws IOException, NoMeasurementException {
-    return executeMayAttachTimeFiler(selectedPathList, timeFilter);
+    return executeMayAttachTimeFiler(selectedPathList, timeFilter, null);
   }
 
   /**
@@ -170,12 +170,15 @@ public class TsFileExecutor implements QueryExecutor {
    * @return DataSetWithoutTimeGenerator
    */
   private QueryDataSet executeMayAttachTimeFiler(
-      List<Path> selectedPathList, GlobalTimeExpression timeExpression)
+      List<Path> selectedPathList, GlobalTimeExpression timeExpression, List<Integer> deviceIds)
       throws IOException, NoMeasurementException {
     List<AbstractFileSeriesReader> readersOfSelectedSeries = new ArrayList<>();
     List<TSDataType> dataTypes = new ArrayList<>();
 
-    for (Path path : selectedPathList) {
+    for (int i = 0; i < selectedPathList.size(); i++) {
+      Path path = selectedPathList.get(i);
+      int deviceId = deviceIds.get(i);
+
       List<IChunkMetadata> chunkMetadataList = metadataQuerier.getChunkMetaDataList(path);
       AbstractFileSeriesReader seriesReader;
       if (chunkMetadataList.isEmpty()) {

@@ -17,28 +17,31 @@
  * under the License.
  */
 
-package org.apache.iotdb.tsfile.read.common;
+package org.apache.iotdb.tsfile.read.expression.impl;
 
-import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+import org.apache.iotdb.tsfile.read.expression.ExpressionType;
+import org.apache.iotdb.tsfile.read.expression.IExpression;
+import org.apache.iotdb.tsfile.read.expression.IUnaryExpression;
+import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 
-public class BatchDataFactory {
+import java.io.Serializable;
 
-  private BatchDataFactory() {
-    throw new IllegalStateException("Factory class");
+public class MixedGroupQueryExpression implements IUnaryExpression, Serializable {
+  @Override
+  public ExpressionType getType() {
+    return null;
   }
 
-  public static BatchData createBatchData(
-      TSDataType dataType, boolean ascending, boolean isWriteDesc) {
-    if (ascending) {
-      return new BatchData(dataType);
-    } else if (isWriteDesc) {
-      return new DescReadWriteBatchData(dataType);
-    } else {
-      return new DescReadBatchData(dataType);
-    }
+  @Override
+  public IExpression clone() {
+    return null;
   }
 
-  public static BatchData createBatchData(TSDataType dataType) {
-    return new BatchData(dataType);
+  @Override
+  public Filter getFilter() {
+    return null;
   }
+
+  @Override
+  public void setFilter(Filter filter) {}
 }

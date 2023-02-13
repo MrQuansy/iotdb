@@ -17,28 +17,20 @@
  * under the License.
  */
 
-package org.apache.iotdb.tsfile.read.common;
+package org.apache.iotdb.tsfile.write.record;
 
-import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+public class GroupRecord extends TSRecord {
 
-public class BatchDataFactory {
+  public byte deviceIdentifier;
 
-  private BatchDataFactory() {
-    throw new IllegalStateException("Factory class");
-  }
-
-  public static BatchData createBatchData(
-      TSDataType dataType, boolean ascending, boolean isWriteDesc) {
-    if (ascending) {
-      return new BatchData(dataType);
-    } else if (isWriteDesc) {
-      return new DescReadWriteBatchData(dataType);
-    } else {
-      return new DescReadBatchData(dataType);
-    }
-  }
-
-  public static BatchData createBatchData(TSDataType dataType) {
-    return new BatchData(dataType);
+  /**
+   * constructor of TSRecord.
+   *
+   * @param timestamp timestamp of this TSRecord
+   * @param deviceId deviceId of this TSRecord
+   */
+  public GroupRecord(long timestamp, String deviceId, byte deviceIdentifier) {
+    super(timestamp, deviceId);
+    this.deviceIdentifier = deviceIdentifier;
   }
 }

@@ -52,13 +52,17 @@ public class MixedGroupChunkReader implements IChunkReader {
 
   protected Filter filter;
 
+  protected int deviceIdentifier;
+
   private List<IPageReader> pageReaderList = new LinkedList<>();
 
-  public MixedGroupChunkReader(Chunk chunk, Filter filter) throws IOException {
+  public MixedGroupChunkReader(Chunk chunk, Filter filter, int deviceIdentifier)
+      throws IOException {
     this.filter = filter;
     this.chunkDataBuffer = chunk.getData();
     chunkHeader = chunk.getHeader();
     this.unCompressor = IUnCompressor.getUnCompressor(chunkHeader.getCompressionType());
+    this.deviceIdentifier = deviceIdentifier;
     initAllPageReaders(chunk.getChunkStatistic());
   }
 
@@ -150,7 +154,8 @@ public class MixedGroupChunkReader implements IChunkReader {
             valueDecoder,
             timeDecoder,
             deviceColumnDecoder,
-            filter);
+            filter,
+            deviceIdentifier);
     return reader;
   }
 

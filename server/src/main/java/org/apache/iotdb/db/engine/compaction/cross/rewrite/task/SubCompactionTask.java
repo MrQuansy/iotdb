@@ -74,6 +74,7 @@ public class SubCompactionTask implements Callable<Void> {
   @Override
   public Void call() throws Exception {
     try {
+      // todo
       for (String measurement : measurementList) {
         List<IMeasurementSchema> measurementSchemas =
             Collections.singletonList(schemaMap.get(measurement));

@@ -27,6 +27,7 @@ import org.apache.iotdb.tsfile.read.controller.IChunkLoader;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.IChunkReader;
 import org.apache.iotdb.tsfile.read.reader.chunk.ChunkReader;
+import org.apache.iotdb.tsfile.read.reader.chunk.MixedGroupChunkReader;
 
 import java.io.IOException;
 
@@ -55,5 +56,12 @@ public class DiskChunkLoader implements IChunkLoader {
     Chunk chunk = ChunkCache.getInstance().get((ChunkMetadata) chunkMetaData, debug);
     chunk.setFromOldFile(chunkMetaData.isFromOldTsFile());
     return new ChunkReader(chunk, timeFilter);
+  }
+
+  public IChunkReader getMixedGroupChunkReader(
+      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
+    Chunk chunk = ChunkCache.getInstance().get((ChunkMetadata) chunkMetaData, debug);
+    chunk.setFromOldFile(chunkMetaData.isFromOldTsFile());
+    return new MixedGroupChunkReader(chunk, timeFilter, deviceIdentifier);
   }
 }

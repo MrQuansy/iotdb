@@ -41,6 +41,7 @@ import org.apache.iotdb.tsfile.read.query.dataset.QueryDataSet;
 import org.apache.iotdb.tsfile.utils.Binary;
 import org.apache.iotdb.tsfile.utils.TsFileGeneratorForTest;
 import org.apache.iotdb.tsfile.write.TsFileWriter;
+import org.apache.iotdb.tsfile.write.record.GroupRecord;
 import org.apache.iotdb.tsfile.write.record.TSRecord;
 import org.apache.iotdb.tsfile.write.record.datapoint.IntDataPoint;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
@@ -53,7 +54,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TsFileReaderTest {
 
@@ -132,6 +135,68 @@ public class TsFileReaderTest {
     queryTest(rowCount);
     tsFile.close();
     TsFileGeneratorForTest.after();
+  }
+
+  @Test
+  public void testMixedGroup() throws IOException, WriteProcessException {
+    final String filePath = TsFileGeneratorForTest.getTestTsFilePath("root.sg1", 0, 0, 1);
+    File file = new File(filePath);
+    if (!file.getParentFile().exists()) {
+      Assert.assertTrue(file.getParentFile().mkdirs());
+    }
+
+    TSFileConfig tsFileConfig = TSFileDescriptor.getInstance().getConfig();
+    // make multi pages in one group
+    tsFileConfig.setMaxNumberOfPointsInPage(100);
+    tsFileConfig.setGroupSizeInByte(100 * 1024 * 1024);
+    TsFileWriter tsFileWriter = new TsFileWriter(file, new Schema(), tsFileConfig);
+
+    Path path = new Path("group1", "s1");
+
+    Map<String, MeasurementSchema> template = new HashMap<>();
+    template.put("s1", new MeasurementSchema("s1", TSDataType.INT32));
+    template.put("s2", new MeasurementSchema("s2", TSDataType.INT32));
+
+    tsFileWriter.registerSchemaTemplate("example", template, false);
+    tsFileWriter.registerMixedGroup("group1", null, "example");
+
+    for (int i = 0; i < 10; i++) {
+      for (int subid = 0; subid < 5; subid++) {
+        GroupRecord t = new GroupRecord(i, "group1", (byte) subid);
+        t.addTuple(new IntDataPoint("s1", i));
+        t.addTuple(new IntDataPoint("s2", i));
+        tsFileWriter.writeMixedGroupRecord(t);
+      }
+    }
+    // make same value to filter
+    //    TSRecord t = new TSRecord(101011000000L, "t");
+    //    t.addTuple(new IntDataPoint("id", 8000001));
+    //    tsFileWriter.write(t);
+    tsFileWriter.flushAllChunkGroups();
+    tsFileWriter.close();
+
+    TsFileReader tsFileReader = new TsFileReader(new TsFileSequenceReader(filePath));
+
+    SingleSeriesExpression filter = new SingleSeriesExpression(path, ValueFilter.eq(8000001));
+    QueryExpression queryExpression = QueryExpression.create(Arrays.asList(path), null);
+    QueryDataSet query = tsFileReader.query(queryExpression);
+
+    int i = 0;
+    Assert.assertTrue(query.hasNext());
+    while (query.hasNext()) {
+      RowRecord next = query.next();
+      if (i == 0) {
+        Assert.assertEquals(next.getTimestamp(), 8000001);
+        Assert.assertEquals(next.getFields().get(0).getIntV(), 8000001);
+        i++;
+      } else {
+        Assert.assertEquals(next.getTimestamp(), 101011000000L);
+        Assert.assertEquals(next.getFields().get(0).getIntV(), 8000001);
+      }
+    }
+
+    tsFileReader.close();
+    file.delete();
   }
 
   private void queryTest(int rowCount) throws IOException {

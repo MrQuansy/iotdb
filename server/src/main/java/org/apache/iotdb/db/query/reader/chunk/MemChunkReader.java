@@ -39,6 +39,8 @@ public class MemChunkReader implements IChunkReader, IPointReader {
   private TimeValuePair cachedTimeValuePair;
   private List<IPageReader> pageReaderList;
 
+  private byte deviceIdentifier;
+
   public MemChunkReader(ReadOnlyMemChunk readableChunk, Filter filter) {
     timeValuePairIterator = readableChunk.getPointReader();
     this.filter = filter;

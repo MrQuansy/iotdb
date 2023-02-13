@@ -25,14 +25,22 @@ import org.apache.iotdb.db.engine.memtable.IWritableMemChunkGroup;
 import org.apache.iotdb.db.engine.modification.Deletion;
 import org.apache.iotdb.db.engine.modification.Modification;
 import org.apache.iotdb.db.engine.querycontext.MixedGroupReadOnlyMemChunk;
+import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
+import org.apache.iotdb.db.engine.storagegroup.TsFileResource;
 import org.apache.iotdb.db.exception.metadata.IllegalPathException;
 import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.IDeviceID;
+import org.apache.iotdb.db.query.context.QueryContext;
+import org.apache.iotdb.db.query.filter.TsFileFilter;
+import org.apache.iotdb.db.query.reader.series.SeriesReader;
+import org.apache.iotdb.db.utils.TestOnly;
 import org.apache.iotdb.db.utils.datastructure.TVList;
+import org.apache.iotdb.tsfile.file.metadata.IChunkMetadata;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.read.common.TimeRange;
+import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.utils.Pair;
 import org.apache.iotdb.tsfile.write.schema.IMeasurementSchema;
 
@@ -43,6 +51,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MixedGroupPath extends MeasurementPath {
 
@@ -79,6 +88,10 @@ public class MixedGroupPath extends MeasurementPath {
       throws IllegalPathException {
     super(device, measurement, measurementSchema);
     this.deviceIdentifier = deviceIdentifier;
+  }
+
+  public byte getDeviceIdentifier() {
+    return deviceIdentifier;
   }
 
   @Override
@@ -132,4 +145,75 @@ public class MixedGroupPath extends MeasurementPath {
     }
     return TimeRange.sortAndMerge(deletionList);
   }
+
+  @Override
+  public SeriesReader createSeriesReader(
+      Set<String> allSensors,
+      TSDataType dataType,
+      QueryContext context,
+      QueryDataSource dataSource,
+      Filter timeFilter,
+      Filter valueFilter,
+      TsFileFilter fileFilter,
+      boolean ascending) {
+    return new SeriesReader(
+        this,
+        allSensors,
+        dataType,
+        context,
+        dataSource,
+        timeFilter,
+        valueFilter,
+        fileFilter,
+        ascending);
+  }
+
+  @TestOnly
+  public SeriesReader createSeriesReader(
+      Set<String> allSensors,
+      TSDataType dataType,
+      QueryContext context,
+      List<TsFileResource> seqFileResource,
+      List<TsFileResource> unseqFileResource,
+      Filter timeFilter,
+      Filter valueFilter,
+      boolean ascending) {
+    allSensors.add(this.getMeasurement());
+    return new SeriesReader(
+        this,
+        allSensors,
+        dataType,
+        context,
+        seqFileResource,
+        unseqFileResource,
+        timeFilter,
+        valueFilter,
+        ascending);
+  }
+
+  @Override
+  public TsFileResource createTsFileResource(
+      List<ReadOnlyMemChunk> readOnlyMemChunk,
+      List<IChunkMetadata> chunkMetadataList,
+      TsFileResource originTsFileResource)
+      throws IOException {
+    TsFileResource tsFileResource =
+        new TsFileResource(this, readOnlyMemChunk, chunkMetadataList, originTsFileResource);
+    tsFileResource.setTimeSeriesMetadata(
+        this, generateTimeSeriesMetadata(readOnlyMemChunk, chunkMetadataList));
+    return tsFileResource;
+  }
+
+  // todo
+  //  @Override
+  //  public boolean equals(Object o) {
+  //    if (this == o) {
+  //      return true;
+  //    }
+  //    if (o == null || getClass() != o.getClass()) {
+  //      return false;
+  //    }
+  //
+  //    return super.equals(o);
+  //  }
 }

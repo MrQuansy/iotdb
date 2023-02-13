@@ -50,6 +50,7 @@ import org.apache.iotdb.db.metadata.mnode.IMNode;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
 import org.apache.iotdb.db.metadata.mnode.IStorageGroupMNode;
 import org.apache.iotdb.db.metadata.mnode.MeasurementMNode;
+import org.apache.iotdb.db.metadata.mnode.MixedGroupMappingNode;
 import org.apache.iotdb.db.metadata.mtree.MTree;
 import org.apache.iotdb.db.metadata.path.MeasurementPath;
 import org.apache.iotdb.db.metadata.path.PartialPath;
@@ -68,6 +69,7 @@ import org.apache.iotdb.db.qp.physical.sys.AutoCreateDeviceMNodePlan;
 import org.apache.iotdb.db.qp.physical.sys.ChangeAliasPlan;
 import org.apache.iotdb.db.qp.physical.sys.ChangeTagOffsetPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.DeactivateTemplatePlan;
@@ -742,6 +744,76 @@ public class MManager {
     if (config.isEnableIDTable() && (!isRecovering || !config.isEnableIDTableLogFile())) {
       IDTable idTable = IDTableManager.getInstance().getIDTable(plan.getPrefixPath());
       idTable.createAlignedTimeseries(plan);
+    }
+  }
+
+  /**
+   * create mixed group timeseries
+   *
+   * @param plan CreateMixedGroupTimeSeriesPlan
+   */
+  public void createMixedGroupTimeSeries(CreateMixedGroupTimeSeriesPlan plan)
+      throws MetadataException {
+    if (!allowToCreateNewSeries) {
+      throw new MetadataException(
+          "IoTDB system load is too large to create timeseries, "
+              + "please increase MAX_HEAP_SIZE in iotdb-env.sh/bat and restart");
+    }
+    int seriesCount = plan.getMeasurements().size();
+
+    if (seriesNumerMonitor != null && !seriesNumerMonitor.addTimeSeries(seriesCount)) {
+      throw new SeriesNumberOverflowException();
+    }
+
+    try {
+      PartialPath prefixPath = plan.getPrefixPath();
+      List<String> measurements = plan.getMeasurements();
+      List<TSDataType> dataTypes = plan.getDataTypes();
+      List<TSEncoding> encodings = plan.getEncodings();
+
+      try {
+        for (int i = 0; i < measurements.size(); i++) {
+          SchemaUtils.checkDataTypeWithEncoding(dataTypes.get(i), encodings.get(i));
+        }
+
+        ensureStorageGroup(prefixPath);
+
+        // create time series in MTree
+        mtree.createMixedGroupTimeseries(
+            prefixPath,
+            measurements,
+            plan.getDataTypes(),
+            plan.getEncodings(),
+            plan.getCompressors());
+
+        // the cached mNode may be replaced by new entityMNode in mtree
+        mNodeCache.invalidate(prefixPath);
+      } catch (Throwable t) {
+        // roll back
+        if (seriesNumerMonitor != null) {
+          seriesNumerMonitor.deleteTimeSeries(seriesCount);
+        }
+        throw t;
+      }
+
+      // update statistics and schemaDataTypeNumMap
+      totalNormalSeriesNumber.addAndGet(seriesCount);
+      if (totalNormalSeriesNumber.get() * ESTIMATED_SERIES_SIZE >= MTREE_SIZE_THRESHOLD) {
+        logger.warn("Current series number {} is too large...", totalNormalSeriesNumber);
+        allowToCreateNewSeries = false;
+      }
+      // write log
+      if (!isRecovering) {
+        logWriter.createMixedGroupTimeseries(plan);
+      }
+    } catch (IOException e) {
+      throw new MetadataException(e);
+    }
+
+    // update id table if not in recovering or disable id table log file
+    if (config.isEnableIDTable() && (!isRecovering || !config.isEnableIDTableLogFile())) {
+      IDTable idTable = IDTableManager.getInstance().getIDTable(plan.getPrefixPath());
+      idTable.createMixedGroupTimeseries(plan);
     }
   }
 
@@ -2131,6 +2203,17 @@ public class MManager {
               devicePath.getFullPath());
         }
       }
+    }
+
+    if (deviceMNode instanceof MixedGroupMappingNode) {
+      PartialPath path = plan.getDevicePath();
+      Byte id =
+          ((MixedGroupMappingNode) deviceMNode)
+              .getDeviceIdentifier(path.getTailNode(), config.isAutoCreateSchemaEnabled());
+      if (id == null) {
+        throw new PathNotExistException(path.getFullPath());
+      }
+      plan.mapFullPathToMixedGroupPath(path.getDevicePath(), id);
     }
 
     // 2. get schema of each measurement

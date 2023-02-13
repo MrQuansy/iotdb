@@ -39,6 +39,8 @@ public abstract class AbstractFileSeriesReader implements IBatchReader {
 
   protected Filter filter;
 
+  protected int deviceIdentifier;
+
   /** constructor of FileSeriesReader. */
   public AbstractFileSeriesReader(
       IChunkLoader chunkLoader, List<IChunkMetadata> chunkMetadataList, Filter filter) {
@@ -46,6 +48,18 @@ public abstract class AbstractFileSeriesReader implements IBatchReader {
     this.chunkMetadataList = chunkMetadataList;
     this.filter = filter;
     this.chunkToRead = 0;
+  }
+
+  public AbstractFileSeriesReader(
+      IChunkLoader chunkLoader,
+      List<IChunkMetadata> chunkMetadataList,
+      Filter filter,
+      int deviceIdentifier) {
+    this.chunkLoader = chunkLoader;
+    this.chunkMetadataList = chunkMetadataList;
+    this.filter = filter;
+    this.chunkToRead = 0;
+    this.deviceIdentifier = deviceIdentifier;
   }
 
   @Override

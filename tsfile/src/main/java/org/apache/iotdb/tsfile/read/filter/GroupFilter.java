@@ -16,28 +16,47 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.tsfile.read.controller;
+package org.apache.iotdb.tsfile.read.filter;
 
-import org.apache.iotdb.tsfile.file.metadata.ChunkMetadata;
-import org.apache.iotdb.tsfile.file.metadata.IChunkMetadata;
-import org.apache.iotdb.tsfile.read.common.Chunk;
+import org.apache.iotdb.tsfile.file.metadata.statistics.Statistics;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
-import org.apache.iotdb.tsfile.read.reader.IChunkReader;
+import org.apache.iotdb.tsfile.read.filter.basic.UnaryFilter;
+import org.apache.iotdb.tsfile.read.filter.factory.FilterSerializeId;
 
-import java.io.IOException;
+public class GroupFilter extends UnaryFilter {
 
-public interface IChunkLoader {
+  @Override
+  public boolean satisfy(Statistics statistics) {
+    return false;
+  }
 
-  /** read all content of any chunk. */
-  Chunk loadChunk(ChunkMetadata chunkMetaData) throws IOException;
+  @Override
+  public boolean satisfy(long time, Object value) {
+    return false;
+  }
 
-  /** close the file reader. */
-  void close() throws IOException;
+  @Override
+  public boolean satisfyStartEndTime(long startTime, long endTime) {
+    return false;
+  }
 
-  IChunkReader getChunkReader(IChunkMetadata chunkMetaData, Filter timeFilter) throws IOException;
+  @Override
+  public boolean containStartEndTime(long startTime, long endTime) {
+    return false;
+  }
 
-  default IChunkReader getMixedGroupChunkReader(
-      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
-    throw new RuntimeException("Not supported mixed group for aligned time series.");
+  @Override
+  public FilterSerializeId getSerializeId() {
+    return null;
+  }
+
+  @Override
+  public String toString() {
+    return null;
+  }
+
+  @Override
+  public Filter copy() {
+    return null;
   }
 }

@@ -27,6 +27,8 @@ import org.apache.iotdb.tsfile.read.controller.IChunkLoader;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.IChunkReader;
 
+import java.io.IOException;
+
 /** To read one chunk from memory, and only used in iotdb server module */
 public class MemChunkLoader implements IChunkLoader {
 
@@ -48,6 +50,12 @@ public class MemChunkLoader implements IChunkLoader {
 
   @Override
   public IChunkReader getChunkReader(IChunkMetadata chunkMetaData, Filter timeFilter) {
+    return new MemChunkReader(chunk, timeFilter);
+  }
+
+  @Override
+  public IChunkReader getMixedGroupChunkReader(
+      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
     return new MemChunkReader(chunk, timeFilter);
   }
 }

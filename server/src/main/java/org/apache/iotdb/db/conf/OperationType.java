@@ -43,6 +43,7 @@ public enum OperationType {
   DELETE_STORAGE_GROUPS("deleteStorageGroup"),
   CREATE_TIMESERIES("createTimeseries"),
   CREATE_ALIGNED_TIMESERIES("createAlignedTimeseries"),
+  CREATE_MIXED_GROUP_TIMESERIES("createMixedGroupTimeseries"),
   CREATE_MULTI_TIMESERIES("createMultiTimeseries"),
   DELETE_TIMESERIES("deleteTimeseries"),
   CREATE_SCHEMA_TEMPLATE("createSchemaTemplate"),

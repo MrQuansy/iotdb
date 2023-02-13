@@ -47,7 +47,6 @@ import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.IDeviceID;
 import org.apache.iotdb.db.metadata.path.AlignedPath;
 import org.apache.iotdb.db.metadata.path.PartialPath;
-import org.apache.iotdb.db.qp.physical.crud.InsertMixedGroupRowPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertRowPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertTabletPlan;
 import org.apache.iotdb.db.query.context.QueryContext;
@@ -362,8 +361,6 @@ public class TsFileProcessor {
       throw new WriteProcessException(e);
     }
 
-    boolean isMixedGroup = insertRowPlan instanceof InsertMixedGroupRowPlan;
-
     for (int i = 0; i < insertRowPlan.getDataTypes().length; i++) {
       // skip failed Measurements
       if (insertRowPlan.getDataTypes()[i] == null || insertRowPlan.getMeasurements()[i] == null) {
@@ -375,14 +372,16 @@ public class TsFileProcessor {
             ChunkMetadata.calculateRamSize(
                 insertRowPlan.getMeasurements()[i], insertRowPlan.getDataTypes()[i]);
         memTableIncrement +=
-            TVList.tvListArrayMemCost(isMixedGroup, insertRowPlan.getDataTypes()[i]);
+            TVList.tvListArrayMemCost(
+                insertRowPlan.isMixedGroup(), insertRowPlan.getDataTypes()[i]);
       } else {
         // here currentChunkPointNum >= 1
         long currentChunkPointNum =
             workMemTable.getCurrentTVListSize(deviceID, insertRowPlan.getMeasurements()[i]);
         memTableIncrement +=
             (currentChunkPointNum % PrimitiveArrayManager.ARRAY_SIZE) == 0
-                ? TVList.tvListArrayMemCost(isMixedGroup, insertRowPlan.getDataTypes()[i])
+                ? TVList.tvListArrayMemCost(
+                    insertRowPlan.isMixedGroup(), insertRowPlan.getDataTypes()[i])
                 : 0;
       }
       // TEXT data mem size

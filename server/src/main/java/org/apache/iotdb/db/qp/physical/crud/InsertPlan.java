@@ -43,6 +43,8 @@ public abstract class InsertPlan extends PhysicalPlan {
   protected PartialPath devicePath;
 
   protected boolean isAligned;
+  protected boolean isMixedGroup = false;
+  protected byte deviceIdentifier = 0;
   protected String[] measurements;
   // get from client
   protected TSDataType[] dataTypes;
@@ -133,6 +135,22 @@ public abstract class InsertPlan extends PhysicalPlan {
 
   public void setAligned(boolean aligned) {
     isAligned = aligned;
+  }
+
+  public boolean isMixedGroup() {
+    return isMixedGroup;
+  }
+
+  public void setMixedGroup(boolean mixedGroup) {
+    isMixedGroup = mixedGroup;
+  }
+
+  public byte getDeviceIdentifier() {
+    return deviceIdentifier;
+  }
+
+  public void setDeviceIdentifier(byte deviceIdentifier) {
+    this.deviceIdentifier = deviceIdentifier;
   }
 
   public abstract long getMinTime();
@@ -238,5 +256,10 @@ public abstract class InsertPlan extends PhysicalPlan {
 
   public void setDeviceID(IDeviceID deviceID) {
     this.deviceID = deviceID;
+  }
+
+  public void mapFullPathToMixedGroupPath(PartialPath devicePathAfterMap, byte deviceIdentifier) {
+    devicePath = devicePathAfterMap;
+    this.deviceIdentifier = deviceIdentifier;
   }
 }

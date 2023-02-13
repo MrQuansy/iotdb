@@ -26,7 +26,6 @@ import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.statistics.Statistics;
 import org.apache.iotdb.tsfile.read.common.BatchData;
 import org.apache.iotdb.tsfile.read.common.BatchDataFactory;
-import org.apache.iotdb.tsfile.read.common.MixedGroupBatchData;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.IPageReader;
 import org.apache.iotdb.tsfile.utils.Binary;
@@ -59,6 +58,8 @@ public class MixedGroupPageReader implements IPageReader {
 
   protected Filter filter;
 
+  private int deviceIdentifier;
+
   public MixedGroupPageReader(
       PageHeader pageHeader,
       ByteBuffer pageData,
@@ -66,7 +67,8 @@ public class MixedGroupPageReader implements IPageReader {
       Decoder valueDecoder,
       Decoder timeDecoder,
       Decoder deviceColumnDecoder,
-      Filter filter) {
+      Filter filter,
+      int deviceIdentifier) {
     this.dataType = dataType;
     this.valueDecoder = valueDecoder;
     this.timeDecoder = timeDecoder;
@@ -74,13 +76,13 @@ public class MixedGroupPageReader implements IPageReader {
     this.filter = filter;
     this.pageHeader = pageHeader;
     splitDataToTimeStampAndValue(pageData);
+    this.deviceIdentifier = deviceIdentifier;
   }
 
   @Override
   public BatchData getAllSatisfiedPageData(boolean ascending) throws IOException {
-    MixedGroupBatchData pageData =
-        (MixedGroupBatchData)
-            BatchDataFactory.createMixedGroupBatchData(dataType, ascending, false);
+
+    BatchData pageData = BatchDataFactory.createBatchData(dataType, ascending, false);
     if (filter == null || filter.satisfy(getStatistics())) {
       while (timeDecoder.hasNext(timeBuffer)) {
         long timestamp = timeDecoder.readLong(timeBuffer);
@@ -88,37 +90,43 @@ public class MixedGroupPageReader implements IPageReader {
         switch (dataType) {
           case BOOLEAN:
             boolean aBoolean = valueDecoder.readBoolean(valueBuffer);
-            if ((filter == null || filter.satisfy(timestamp, aBoolean))) {
-              pageData.putBoolean(timestamp, aBoolean, deviceId);
+            if (deviceId == deviceIdentifier
+                && (filter == null || filter.satisfy(timestamp, aBoolean))) {
+              pageData.putBoolean(timestamp, aBoolean);
             }
             break;
           case INT32:
             int anInt = valueDecoder.readInt(valueBuffer);
-            if ((filter == null || filter.satisfy(timestamp, anInt))) {
-              pageData.putInt(timestamp, anInt, deviceId);
+            if (deviceId == deviceIdentifier
+                && (filter == null || filter.satisfy(timestamp, anInt))) {
+              pageData.putInt(timestamp, anInt);
             }
             break;
           case INT64:
             long aLong = valueDecoder.readLong(valueBuffer);
-            if ((filter == null || filter.satisfy(timestamp, aLong))) {
-              pageData.putLong(timestamp, aLong, deviceId);
+            if (deviceId == deviceIdentifier
+                && (filter == null || filter.satisfy(timestamp, aLong))) {
+              pageData.putLong(timestamp, aLong);
             }
             break;
           case FLOAT:
             float aFloat = valueDecoder.readFloat(valueBuffer);
-            if ((filter == null || filter.satisfy(timestamp, aFloat))) {
-              pageData.putFloat(timestamp, aFloat, deviceId);
+            if (deviceId == deviceIdentifier
+                && (filter == null || filter.satisfy(timestamp, aFloat))) {
+              pageData.putFloat(timestamp, aFloat);
             }
             break;
           case DOUBLE:
             double aDouble = valueDecoder.readDouble(valueBuffer);
-            if ((filter == null || filter.satisfy(timestamp, aDouble))) {
-              pageData.putDouble(timestamp, aDouble, deviceId);
+            if (deviceId == deviceIdentifier
+                && (filter == null || filter.satisfy(timestamp, aDouble))) {
+              pageData.putDouble(timestamp, aDouble);
             }
             break;
           case TEXT:
             Binary aBinary = valueDecoder.readBinary(valueBuffer);
-            if ((filter == null || filter.satisfy(timestamp, aBinary))) {
+            if (deviceId == deviceIdentifier
+                && (filter == null || filter.satisfy(timestamp, aBinary))) {
               pageData.putBinary(timestamp, aBinary);
             }
             break;
@@ -136,11 +144,13 @@ public class MixedGroupPageReader implements IPageReader {
   }
 
   @Override
-  public void setFilter(Filter filter) {}
+  public void setFilter(Filter filter) {
+    this.filter = filter;
+  }
 
   @Override
   public boolean isModified() {
-    return false;
+    return pageHeader.isModified();
   }
 
   /**
@@ -150,14 +160,16 @@ public class MixedGroupPageReader implements IPageReader {
    */
   private void splitDataToTimeStampAndValue(ByteBuffer pageData) {
     int timeBufferLength = ReadWriteForEncodingUtils.readUnsignedVarInt(pageData);
+    int valueBufferLength = ReadWriteForEncodingUtils.readUnsignedVarInt(pageData);
 
     timeBuffer = pageData.slice();
     timeBuffer.limit(timeBufferLength);
 
     valueBuffer = pageData.slice();
     valueBuffer.position(timeBufferLength);
+    valueBuffer.limit(timeBufferLength + valueBufferLength);
 
     deviceColumnBuffer = pageData.slice();
-    deviceColumnBuffer.position(timeBufferLength);
+    deviceColumnBuffer.position(timeBufferLength + valueBufferLength);
   }
 }

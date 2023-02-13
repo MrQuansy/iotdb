@@ -47,6 +47,15 @@ public class MNodeUtils {
     return entityMNode;
   }
 
+  public static IEntityMNode setToMixedGroupEntity(IMNode node) {
+    IEntityMNode entityMNode;
+    entityMNode = new MixedGroupEntityMNode(node.getParent(), node.getName());
+    if (node.getParent() != null) {
+      node.getParent().replaceChild(node.getName(), entityMNode);
+    }
+    return entityMNode;
+  }
+
   /**
    * When there's no measurement, represented by template or MeasurementMNode, is under this
    * entityMNode, it should not act as entity anymore. Before invoking this method, lock related

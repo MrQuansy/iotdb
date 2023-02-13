@@ -24,6 +24,7 @@ import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.utils.Binary;
 import org.apache.iotdb.tsfile.utils.StringContainer;
 import org.apache.iotdb.tsfile.write.chunk.ChunkWriterImpl;
+import org.apache.iotdb.tsfile.write.chunk.MixedGroupChunkWriterImpl;
 
 import java.io.IOException;
 
@@ -101,6 +102,8 @@ public abstract class DataPoint {
    * @throws IOException exception in IO
    */
   public abstract void writeTo(long time, ChunkWriterImpl writer) throws IOException;
+
+  public void writeTo(long time, byte deviceIdentifier, MixedGroupChunkWriterImpl writer) {}
 
   public String getMeasurementId() {
     return measurementId;
