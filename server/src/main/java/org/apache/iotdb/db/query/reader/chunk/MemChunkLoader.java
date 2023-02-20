@@ -55,7 +55,8 @@ public class MemChunkLoader implements IChunkLoader {
 
   @Override
   public IChunkReader getMixedGroupChunkReader(
-      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
+      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier, boolean getAllData)
+      throws IOException {
     return new MemChunkReader(chunk, timeFilter);
   }
 }

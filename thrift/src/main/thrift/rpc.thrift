@@ -223,16 +223,7 @@ struct TSInsertRecordReq {
   4: required binary values
   5: required i64 timestamp
   6: optional bool isAligned
-}
-
-struct TSInsertMixedGroupRecordReq {
-  1: required i64 sessionId
-  2: required string prefixPath
-  3: required list<string> measurements
-  4: required binary values
-  5: required i64 timestamp
-  6: required byte deviceIdentifier
-  7: optional bool isAligned
+  7: optional bool isMixed
 }
 
 struct TSInsertStringRecordReq {
@@ -242,6 +233,7 @@ struct TSInsertStringRecordReq {
   4: required list<string> values
   5: required i64 timestamp
   6: optional bool isAligned
+  7: optional bool isMixed
 }
 
 struct TSInsertTabletReq {
@@ -253,6 +245,7 @@ struct TSInsertTabletReq {
   6: required list<i32> types
   7: required i32 size
   8: optional bool isAligned
+  9: optional bool isMixed
 }
 
 struct TSInsertTabletsReq {
@@ -264,6 +257,7 @@ struct TSInsertTabletsReq {
   6: required list<list<i32>> typesList
   7: required list<i32> sizeList
   8: optional bool isAligned
+  9: optional bool isMixed
 }
 
 struct TSInsertRecordsReq {
@@ -273,6 +267,7 @@ struct TSInsertRecordsReq {
   4: required list<binary> valuesList
   5: required list<i64> timestamps
   6: optional bool isAligned
+  7: optional bool isMixed
 }
 
 struct TSInsertRecordsOfOneDeviceReq {
@@ -282,6 +277,7 @@ struct TSInsertRecordsOfOneDeviceReq {
     4: required list<binary> valuesList
     5: required list<i64> timestamps
     6: optional bool isAligned
+    7: optional bool isMixed
 }
 
 struct TSInsertStringRecordsOfOneDeviceReq {
@@ -291,6 +287,7 @@ struct TSInsertStringRecordsOfOneDeviceReq {
     4: required list<list<string>> valuesList
     5: required list<i64> timestamps
     6: optional bool isAligned
+    7: optional bool isMixed
 }
 
 struct TSInsertStringRecordsReq {
@@ -300,6 +297,7 @@ struct TSInsertStringRecordsReq {
   4: required list<list<string>> valuesList
   5: required list<i64> timestamps
   6: optional bool isAligned
+  7: optional bool isMixed
 }
 
 struct TSDeleteDataReq {
@@ -331,15 +329,14 @@ struct TSCreateAlignedTimeseriesReq {
   7: optional list<string> measurementAlias
 }
 
-struct TSCreateMixedGroupTimeseriesReq {
+struct TSCreateMixedTimeseriesReq {
   1: required i64 sessionId
   2: required string prefixPath
   3: required list<string> measurements
   4: required list<i32> dataTypes
   5: required list<i32> encodings
   6: required list<i32> compressors
-  7: required list<string> deviceIdInGroup
-  8: optional list<string> measurementAlias
+  7: optional list<string> measurementAlias
 }
 
 struct TSRawDataQueryReq {
@@ -511,7 +508,7 @@ service TSIService {
 
   TSStatus createAlignedTimeseries(1:TSCreateAlignedTimeseriesReq req);
 
-  TSStatus createMixedGroupTimeseries(1:TSCreateMixedGroupTimeseriesReq req);
+  TSStatus createMixedTimeseries(1:TSCreateMixedTimeseriesReq req);
 
   TSStatus createMultiTimeseries(1:TSCreateMultiTimeseriesReq req);
 
@@ -520,8 +517,6 @@ service TSIService {
   TSStatus deleteStorageGroups(1:i64 sessionId, 2:list<string> storageGroup);
 
   TSStatus insertRecord(1:TSInsertRecordReq req);
-
-  TSStatus insertMixedGroupRecord(1:TSInsertMixedGroupRecordReq req);
 
   TSStatus insertStringRecord(1:TSInsertStringRecordReq req);
 

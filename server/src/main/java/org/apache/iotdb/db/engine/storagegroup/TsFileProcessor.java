@@ -207,7 +207,6 @@ public class TsFileProcessor {
    * @param insertRowPlan physical plan of insertion
    */
   public void insert(InsertRowPlan insertRowPlan) throws WriteProcessException {
-
     if (workMemTable == null) {
       if (enableMemControl) {
         if (config.isEnableMixedGroup()) {

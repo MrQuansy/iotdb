@@ -37,7 +37,8 @@ public interface IChunkLoader {
   IChunkReader getChunkReader(IChunkMetadata chunkMetaData, Filter timeFilter) throws IOException;
 
   default IChunkReader getMixedGroupChunkReader(
-      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
+      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier, boolean getAllData)
+      throws IOException {
     throw new RuntimeException("Not supported mixed group for aligned time series.");
   }
 }

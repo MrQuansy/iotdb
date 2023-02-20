@@ -38,7 +38,10 @@ import org.apache.iotdb.db.query.reader.series.SeriesReader;
 import org.apache.iotdb.db.utils.TestOnly;
 import org.apache.iotdb.db.utils.datastructure.TVList;
 import org.apache.iotdb.tsfile.file.metadata.IChunkMetadata;
+import org.apache.iotdb.tsfile.file.metadata.ITimeSeriesMetadata;
+import org.apache.iotdb.tsfile.file.metadata.TimeseriesMetadata;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+import org.apache.iotdb.tsfile.file.metadata.statistics.Statistics;
 import org.apache.iotdb.tsfile.read.common.TimeRange;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.utils.Pair;
@@ -48,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +62,8 @@ public class MixedGroupPath extends MeasurementPath {
   private static final Logger logger = LoggerFactory.getLogger(MixedGroupPath.class);
 
   private byte deviceIdentifier;
+
+  private boolean isGetAllData = false;
 
   public MixedGroupPath(byte deviceIdentifier) {
     this.deviceIdentifier = deviceIdentifier;
@@ -88,6 +94,14 @@ public class MixedGroupPath extends MeasurementPath {
       throws IllegalPathException {
     super(device, measurement, measurementSchema);
     this.deviceIdentifier = deviceIdentifier;
+  }
+
+  // For compaction
+  public MixedGroupPath(
+      String device, String measurement, IMeasurementSchema measurementSchema, boolean isGetAllData)
+      throws IllegalPathException {
+    super(device, measurement, measurementSchema);
+    this.isGetAllData = isGetAllData;
   }
 
   public byte getDeviceIdentifier() {
@@ -204,16 +218,41 @@ public class MixedGroupPath extends MeasurementPath {
     return tsFileResource;
   }
 
-  // todo
-  //  @Override
-  //  public boolean equals(Object o) {
-  //    if (this == o) {
-  //      return true;
-  //    }
-  //    if (o == null || getClass() != o.getClass()) {
-  //      return false;
-  //    }
-  //
-  //    return super.equals(o);
-  //  }
+  public boolean isGetAllData() {
+    return isGetAllData;
+  }
+
+  public void setGetAllData(boolean getAllData) {
+    isGetAllData = getAllData;
+  }
+
+  /**
+   * Because the unclosed tsfile don't have TimeSeriesMetadata and memtables in the memory don't
+   * have chunkMetadata, but query will use these, so we need to generate it for them.
+   */
+  @Override
+  public ITimeSeriesMetadata generateTimeSeriesMetadata(
+      List<ReadOnlyMemChunk> readOnlyMemChunk, List<IChunkMetadata> chunkMetadataList)
+      throws IOException {
+    TimeseriesMetadata timeSeriesMetadata = new TimeseriesMetadata();
+    timeSeriesMetadata.setMeasurementId(measurementSchema.getMeasurementId());
+    timeSeriesMetadata.setTSDataType(measurementSchema.getType());
+    timeSeriesMetadata.setOffsetOfChunkMetaDataList(-1);
+    timeSeriesMetadata.setDataSizeOfChunkMetaDataList(-1);
+
+    Statistics<? extends Serializable> seriesStatistics =
+        Statistics.getStatsByType(timeSeriesMetadata.getTSDataType());
+    // flush chunkMetadataList one by one
+    for (IChunkMetadata chunkMetadata : chunkMetadataList) {
+      seriesStatistics.mergeStatistics(chunkMetadata.getStatistics());
+    }
+
+    for (ReadOnlyMemChunk memChunk : readOnlyMemChunk) {
+      if (!memChunk.isEmpty()) {
+        seriesStatistics.mergeStatistics(memChunk.getChunkMetaData().getStatistics());
+      }
+    }
+    timeSeriesMetadata.setStatistics(seriesStatistics);
+    return timeSeriesMetadata;
+  }
 }

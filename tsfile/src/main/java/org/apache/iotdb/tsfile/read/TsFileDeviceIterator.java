@@ -21,10 +21,16 @@ package org.apache.iotdb.tsfile.read;
 
 import org.apache.iotdb.tsfile.exception.TsFileRuntimeException;
 import org.apache.iotdb.tsfile.file.metadata.MetadataIndexNode;
+import org.apache.iotdb.tsfile.file.metadata.TimeseriesMetadata;
 import org.apache.iotdb.tsfile.utils.Pair;
+import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
@@ -43,6 +49,22 @@ public class TsFileDeviceIterator implements Iterator<Pair<String, Boolean>> {
 
   public Pair<String, Boolean> current() {
     return currentDevice;
+  }
+
+  public Map<String, MeasurementSchema> currentDeviceSchema() throws IOException {
+    List<TimeseriesMetadata> timeseriesMetadataList = new ArrayList<>();
+    Map<String, MeasurementSchema> schemaMap = new HashMap<>();
+    reader.getDeviceTimeseriesMetadata(
+        timeseriesMetadataList, getFirstMeasurementNodeOfCurrentDevice(), schemaMap.keySet(), true);
+    for (TimeseriesMetadata timeseriesMetadata : timeseriesMetadataList) {
+      if (!schemaMap.containsKey(timeseriesMetadata.getMeasurementId())
+          && !timeseriesMetadata.getChunkMetadataList().isEmpty()) {
+        schemaMap.put(
+            timeseriesMetadata.getMeasurementId(),
+            reader.getMeasurementSchema(timeseriesMetadata.getChunkMetadataList()));
+      }
+    }
+    return schemaMap;
   }
 
   @Override

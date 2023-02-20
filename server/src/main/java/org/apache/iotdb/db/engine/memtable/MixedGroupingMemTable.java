@@ -135,6 +135,12 @@ public class MixedGroupingMemTable implements IMemTable {
       Object[] objectValue) {
     IWritableMemChunkGroup memChunkGroup =
         memTableMap.computeIfAbsent(groupId, k -> new MixedGroupWritableMemChunkGroup());
+    for (IMeasurementSchema schema : schemaList) {
+      if (!memChunkGroup.contains(schema.getMeasurementId())) {
+        seriesNumber++;
+        totalPointsNumThreshold += avgSeriesPointNumThreshold;
+      }
+    }
     memChunkGroup.write(insertTime, objectValue, schemaList, deviceId);
   }
 
@@ -260,7 +266,6 @@ public class MixedGroupingMemTable implements IMemTable {
   public void insertAlignedTablet(InsertTabletPlan insertTabletPlan, int start, int end)
       throws WriteProcessException {}
 
-  // todo query data in memtable
   @Override
   public ReadOnlyMemChunk query(
       PartialPath fullPath, long ttlLowerBound, List<Pair<Modification, IMemTable>> modsToMemtable)

@@ -37,10 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class CreateMixedGroupTimeSeriesPlan extends PhysicalPlan {
+public class CreateMixedTimeSeriesPlan extends PhysicalPlan {
 
-  private static final Logger logger =
-      LoggerFactory.getLogger(CreateMixedGroupTimeSeriesPlan.class);
+  private static final Logger logger = LoggerFactory.getLogger(CreateMixedTimeSeriesPlan.class);
 
   private PartialPath prefixPath;
   private List<String> measurements;
@@ -49,19 +48,19 @@ public class CreateMixedGroupTimeSeriesPlan extends PhysicalPlan {
   private List<CompressionType> compressors;
   private List<String> aliasList;
 
-  public CreateMixedGroupTimeSeriesPlan() {
-    super(Operator.OperatorType.CREATE_MIXED_GROUP_TIMESERIES);
+  public CreateMixedTimeSeriesPlan() {
+    super(Operator.OperatorType.CREATE_MIXED_TIMESERIES);
     canBeSplit = false;
   }
 
-  public CreateMixedGroupTimeSeriesPlan(
+  public CreateMixedTimeSeriesPlan(
       PartialPath prefixPath,
       List<String> measurements,
       List<TSDataType> dataTypes,
       List<TSEncoding> encodings,
       List<CompressionType> compressors,
       List<String> aliasList) {
-    super(Operator.OperatorType.CREATE_MIXED_GROUP_TIMESERIES);
+    super(Operator.OperatorType.CREATE_MIXED_TIMESERIES);
     this.prefixPath = prefixPath;
     this.measurements = measurements;
     this.dataTypes = dataTypes;
@@ -250,7 +249,7 @@ public class CreateMixedGroupTimeSeriesPlan extends PhysicalPlan {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CreateMixedGroupTimeSeriesPlan that = (CreateMixedGroupTimeSeriesPlan) o;
+    CreateMixedTimeSeriesPlan that = (CreateMixedTimeSeriesPlan) o;
 
     return Objects.equals(prefixPath, that.prefixPath)
         && Objects.equals(measurements, that.measurements)

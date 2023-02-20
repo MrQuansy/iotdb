@@ -33,7 +33,7 @@ import org.apache.iotdb.db.qp.physical.sys.AutoCreateDeviceMNodePlan;
 import org.apache.iotdb.db.qp.physical.sys.ChangeAliasPlan;
 import org.apache.iotdb.db.qp.physical.sys.ChangeTagOffsetPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
-import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.DeactivateTemplatePlan;
@@ -144,9 +144,9 @@ public class MLogWriter implements AutoCloseable {
     putLog(createAlignedTimeSeriesPlan);
   }
 
-  public void createMixedGroupTimeseries(
-      CreateMixedGroupTimeSeriesPlan createMixedGroupTimeSeriesPlan) throws IOException {
-    putLog(createMixedGroupTimeSeriesPlan);
+  public void createMixedGroupTimeseries(CreateMixedTimeSeriesPlan createMixedTimeSeriesPlan)
+      throws IOException {
+    putLog(createMixedTimeSeriesPlan);
   }
 
   public void deleteTimeseries(DeleteTimeSeriesPlan deleteTimeSeriesPlan) throws IOException {

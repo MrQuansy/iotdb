@@ -26,6 +26,7 @@ import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.statistics.Statistics;
 import org.apache.iotdb.tsfile.read.common.BatchData;
 import org.apache.iotdb.tsfile.read.common.BatchDataFactory;
+import org.apache.iotdb.tsfile.read.common.MixedGroupBatchData;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.IPageReader;
 import org.apache.iotdb.tsfile.utils.Binary;
@@ -60,6 +61,8 @@ public class MixedGroupPageReader implements IPageReader {
 
   private int deviceIdentifier;
 
+  private boolean getAllData;
+
   public MixedGroupPageReader(
       PageHeader pageHeader,
       ByteBuffer pageData,
@@ -68,7 +71,8 @@ public class MixedGroupPageReader implements IPageReader {
       Decoder timeDecoder,
       Decoder deviceColumnDecoder,
       Filter filter,
-      int deviceIdentifier) {
+      int deviceIdentifier,
+      boolean getAllData) {
     this.dataType = dataType;
     this.valueDecoder = valueDecoder;
     this.timeDecoder = timeDecoder;
@@ -77,10 +81,14 @@ public class MixedGroupPageReader implements IPageReader {
     this.pageHeader = pageHeader;
     splitDataToTimeStampAndValue(pageData);
     this.deviceIdentifier = deviceIdentifier;
+    this.getAllData = getAllData;
   }
 
   @Override
   public BatchData getAllSatisfiedPageData(boolean ascending) throws IOException {
+    if (getAllData) {
+      return createMixedGroupBatchData();
+    }
 
     BatchData pageData = BatchDataFactory.createBatchData(dataType, ascending, false);
     if (filter == null || filter.satisfy(getStatistics())) {
@@ -135,6 +143,45 @@ public class MixedGroupPageReader implements IPageReader {
         }
       }
     }
+    return pageData.flip();
+  }
+
+  private BatchData createMixedGroupBatchData() throws IOException {
+    MixedGroupBatchData pageData = new MixedGroupBatchData(dataType);
+
+    while (timeDecoder.hasNext(timeBuffer)) {
+      long timestamp = timeDecoder.readLong(timeBuffer);
+      int deviceId = deviceColumnDecoder.readInt(deviceColumnBuffer);
+      switch (dataType) {
+        case BOOLEAN:
+          boolean aBoolean = valueDecoder.readBoolean(valueBuffer);
+          pageData.putBoolean(timestamp, aBoolean, deviceId);
+          break;
+        case INT32:
+          int anInt = valueDecoder.readInt(valueBuffer);
+          pageData.putInt(timestamp, anInt, deviceId);
+          break;
+        case INT64:
+          long aLong = valueDecoder.readLong(valueBuffer);
+          pageData.putLong(timestamp, aLong, deviceId);
+          break;
+        case FLOAT:
+          float aFloat = valueDecoder.readFloat(valueBuffer);
+          pageData.putFloat(timestamp, aFloat, deviceId);
+          break;
+        case DOUBLE:
+          double aDouble = valueDecoder.readDouble(valueBuffer);
+          pageData.putDouble(timestamp, aDouble, deviceId);
+          break;
+        case TEXT:
+          Binary aBinary = valueDecoder.readBinary(valueBuffer);
+          pageData.putBinary(timestamp, aBinary, deviceId);
+          break;
+        default:
+          throw new UnSupportedDataTypeException(String.valueOf(dataType));
+      }
+    }
+
     return pageData.flip();
   }
 

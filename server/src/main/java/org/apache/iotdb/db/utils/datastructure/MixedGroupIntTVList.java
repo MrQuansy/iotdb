@@ -228,7 +228,9 @@ public class MixedGroupIntTVList extends IntTVList {
         byte deviceIdentifier = getDeviceIdentifier(cur);
         if ((deviceIdentifier != deviceIdentifierForQuery)
             || isPointDeleted(time)
-            || (cur + 1 < rowCount() && (time == getTime(cur + 1)))) {
+            || ((cur + 1 < rowCount())
+                && (time == getTime(cur + 1))
+                && (deviceIdentifierForQuery == getDeviceIdentifier(cur + 1)))) {
           cur++;
           continue;
         }

@@ -28,13 +28,12 @@ import org.apache.iotdb.service.rpc.thrift.TSAppendSchemaTemplateReq;
 import org.apache.iotdb.service.rpc.thrift.TSBackupConfigurationResp;
 import org.apache.iotdb.service.rpc.thrift.TSConnectionInfoResp;
 import org.apache.iotdb.service.rpc.thrift.TSCreateAlignedTimeseriesReq;
-import org.apache.iotdb.service.rpc.thrift.TSCreateMixedGroupTimeseriesReq;
+import org.apache.iotdb.service.rpc.thrift.TSCreateMixedTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateMultiTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateSchemaTemplateReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSDeleteDataReq;
 import org.apache.iotdb.service.rpc.thrift.TSDropSchemaTemplateReq;
-import org.apache.iotdb.service.rpc.thrift.TSInsertMixedGroupRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsOfOneDeviceReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsReq;
@@ -602,7 +601,7 @@ public class Session {
     defaultSessionConnection.createAlignedTimeseries(request);
   }
 
-  public void createMixedGroupTimeseries(
+  public void createMixedTimeseries(
       String groupId,
       List<String> measurements,
       List<TSDataType> dataTypes,
@@ -611,8 +610,8 @@ public class Session {
       List<String> measurementAliasList,
       List<String> deviceIdentifierList)
       throws IoTDBConnectionException, StatementExecutionException {
-    TSCreateMixedGroupTimeseriesReq request =
-        getTSCreateMixedGroupTimeseriesReq(
+    TSCreateMixedTimeseriesReq request =
+        getTSCreateMixedTimeseriesReq(
             groupId,
             measurements,
             dataTypes,
@@ -620,7 +619,7 @@ public class Session {
             compressors,
             measurementAliasList,
             deviceIdentifierList);
-    defaultSessionConnection.createMixedGroupTimeseries(request);
+    defaultSessionConnection.createMixedTimeseries(request);
   }
 
   private TSCreateAlignedTimeseriesReq getTSCreateAlignedTimeseriesReq(
@@ -641,7 +640,7 @@ public class Session {
     return request;
   }
 
-  private TSCreateMixedGroupTimeseriesReq getTSCreateMixedGroupTimeseriesReq(
+  private TSCreateMixedTimeseriesReq getTSCreateMixedTimeseriesReq(
       String prefixPath,
       List<String> measurements,
       List<TSDataType> dataTypes,
@@ -649,7 +648,7 @@ public class Session {
       List<CompressionType> compressors,
       List<String> measurementAliasList,
       List<String> deviceIdentifierList) {
-    TSCreateMixedGroupTimeseriesReq request = new TSCreateMixedGroupTimeseriesReq();
+    TSCreateMixedTimeseriesReq request = new TSCreateMixedTimeseriesReq();
     request.setPrefixPath(prefixPath);
     request.setMeasurements(measurements);
     request.setDataTypes(dataTypes.stream().map(TSDataType::ordinal).collect(Collectors.toList()));
@@ -657,7 +656,6 @@ public class Session {
     request.setCompressors(
         compressors.stream().map(i -> (int) i.serialize()).collect(Collectors.toList()));
     request.setMeasurementAlias(measurementAliasList);
-    request.setDeviceIdInGroup(deviceIdentifierList);
     return request;
   }
 
@@ -892,7 +890,31 @@ public class Session {
     try {
       request =
           filterAndGenTSInsertRecordReq(
-              deviceId, time, measurements, types, Arrays.asList(values), false);
+              deviceId, time, measurements, types, Arrays.asList(values), false, false);
+    } catch (NoValidValueException e) {
+      logger.warn(
+          "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
+          deviceId,
+          time,
+          measurements.toString());
+      return;
+    }
+
+    insertRecord(deviceId, request);
+  }
+
+  public void insertMixedRecord(
+      String deviceId,
+      long time,
+      List<String> measurements,
+      List<TSDataType> types,
+      Object... values)
+      throws IoTDBConnectionException, StatementExecutionException {
+    TSInsertRecordReq request;
+    try {
+      request =
+          filterAndGenTSInsertRecordReq(
+              deviceId, time, measurements, types, Arrays.asList(values), false, true);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
@@ -915,15 +937,6 @@ public class Session {
   }
 
   private void insertRecord(String deviceId, TSInsertStringRecordReq request)
-      throws IoTDBConnectionException, StatementExecutionException {
-    try {
-      getSessionConnection(deviceId).insertRecord(request);
-    } catch (RedirectException e) {
-      handleRedirection(deviceId, e.getEndPoint());
-    }
-  }
-
-  private void insertRecord(String deviceId, TSInsertMixedGroupRecordReq request)
       throws IoTDBConnectionException, StatementExecutionException {
     try {
       getSessionConnection(deviceId).insertRecord(request);
@@ -1060,7 +1073,32 @@ public class Session {
     // not vector by default
     TSInsertRecordReq request;
     try {
-      request = filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, false);
+      request =
+          filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, false, false);
+    } catch (NoValidValueException e) {
+      logger.warn(
+          "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
+          deviceId,
+          time,
+          measurements.toString());
+      return;
+    }
+
+    insertRecord(deviceId, request);
+  }
+
+  public void insertMixedRecord(
+      String deviceId,
+      long time,
+      List<String> measurements,
+      List<TSDataType> types,
+      List<Object> values)
+      throws IoTDBConnectionException, StatementExecutionException {
+    // not vector by default
+    TSInsertRecordReq request;
+    try {
+      request =
+          filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, false, true);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
@@ -1089,31 +1127,8 @@ public class Session {
       throws IoTDBConnectionException, StatementExecutionException {
     TSInsertRecordReq request;
     try {
-      request = filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, true);
-    } catch (NoValidValueException e) {
-      logger.warn(
-          "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
-          deviceId,
-          time,
-          measurements.toString());
-      return;
-    }
-    insertRecord(deviceId, request);
-  }
-
-  public void insertMixedGroupRecord(
-      String deviceId,
-      long time,
-      List<String> measurements,
-      List<TSDataType> types,
-      List<Object> values,
-      byte deviceIdentifierInGroup)
-      throws IoTDBConnectionException, StatementExecutionException {
-    TSInsertMixedGroupRecordReq request;
-    try {
       request =
-          filterAndGenTSInsertMixedGroupRecordReq(
-              deviceId, time, measurements, types, values, false, deviceIdentifierInGroup);
+          filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, true, false);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
@@ -1131,7 +1146,8 @@ public class Session {
       List<String> measurements,
       List<TSDataType> types,
       List<Object> values,
-      boolean isAligned)
+      boolean isAligned,
+      boolean isMixed)
       throws IoTDBConnectionException {
     if (hasNull(values)) {
       measurements = new ArrayList<>(measurements);
@@ -1143,7 +1159,7 @@ public class Session {
         throw new NoValidValueException("All inserted data is null.");
       }
     }
-    return genTSInsertRecordReq(prefixPath, time, measurements, types, values, isAligned);
+    return genTSInsertRecordReq(prefixPath, time, measurements, types, values, isAligned, isMixed);
   }
 
   private TSInsertRecordReq genTSInsertRecordReq(
@@ -1152,7 +1168,8 @@ public class Session {
       List<String> measurements,
       List<TSDataType> types,
       List<Object> values,
-      boolean isAligned)
+      boolean isAligned,
+      boolean isMixed)
       throws IoTDBConnectionException {
     TSInsertRecordReq request = new TSInsertRecordReq();
     request.setPrefixPath(prefixPath);
@@ -1161,49 +1178,7 @@ public class Session {
     ByteBuffer buffer = SessionUtils.getValueBuffer(types, values);
     request.setValues(buffer);
     request.setIsAligned(isAligned);
-    return request;
-  }
-
-  private TSInsertMixedGroupRecordReq filterAndGenTSInsertMixedGroupRecordReq(
-      String prefixPath,
-      long time,
-      List<String> measurements,
-      List<TSDataType> types,
-      List<Object> values,
-      boolean isAligned,
-      byte deviceIdentifierInGroup)
-      throws IoTDBConnectionException {
-    if (hasNull(values)) {
-      measurements = new ArrayList<>(measurements);
-      values = new ArrayList<>(values);
-      types = new ArrayList<>(types);
-      boolean isAllValuesNull =
-          filterNullValueAndMeasurement(prefixPath, measurements, types, values);
-      if (isAllValuesNull) {
-        throw new NoValidValueException("All inserted data is null.");
-      }
-    }
-    return genTSInsertMixedGroupRecordReq(
-        prefixPath, time, measurements, types, values, isAligned, deviceIdentifierInGroup);
-  }
-
-  private TSInsertMixedGroupRecordReq genTSInsertMixedGroupRecordReq(
-      String prefixPath,
-      long time,
-      List<String> measurements,
-      List<TSDataType> types,
-      List<Object> values,
-      boolean isAligned,
-      byte deviceIdentifierInGroup)
-      throws IoTDBConnectionException {
-    TSInsertMixedGroupRecordReq request = new TSInsertMixedGroupRecordReq();
-    request.setPrefixPath(prefixPath);
-    request.setTimestamp(time);
-    request.setMeasurements(measurements);
-    ByteBuffer buffer = SessionUtils.getValueBuffer(types, values);
-    request.setValues(buffer);
-    request.setIsAligned(isAligned);
-    request.setDeviceIdentifier(deviceIdentifierInGroup);
+    request.setIsMixed(isMixed);
     return request;
   }
 
@@ -1219,7 +1194,26 @@ public class Session {
       throws IoTDBConnectionException, StatementExecutionException {
     TSInsertStringRecordReq request;
     try {
-      request = filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, false);
+      request =
+          filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, false, false);
+    } catch (NoValidValueException e) {
+      logger.warn(
+          "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
+          deviceId,
+          time,
+          measurements.toString());
+      return;
+    }
+    insertRecord(deviceId, request);
+  }
+
+  public void insertMixedRecord(
+      String deviceId, long time, List<String> measurements, List<String> values)
+      throws IoTDBConnectionException, StatementExecutionException {
+    TSInsertStringRecordReq request;
+    try {
+      request =
+          filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, false, true);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
@@ -1243,7 +1237,8 @@ public class Session {
       throws IoTDBConnectionException, StatementExecutionException {
     TSInsertStringRecordReq request;
     try {
-      request = filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, true);
+      request =
+          filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, true, false);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
@@ -1260,7 +1255,8 @@ public class Session {
       long time,
       List<String> measurements,
       List<String> values,
-      boolean isAligned) {
+      boolean isAligned,
+      boolean isMixed) {
     if (hasNull(values)) {
       measurements = new ArrayList<>(measurements);
       values = new ArrayList<>(values);
@@ -1270,7 +1266,7 @@ public class Session {
         throw new NoValidValueException("All inserted data is null.");
       }
     }
-    return genTSInsertStringRecordReq(prefixPath, time, measurements, values, isAligned);
+    return genTSInsertStringRecordReq(prefixPath, time, measurements, values, isAligned, isMixed);
   }
 
   private TSInsertStringRecordReq genTSInsertStringRecordReq(
@@ -1278,13 +1274,15 @@ public class Session {
       long time,
       List<String> measurements,
       List<String> values,
-      boolean isAligned) {
+      boolean isAligned,
+      boolean isMixed) {
     TSInsertStringRecordReq request = new TSInsertStringRecordReq();
     request.setPrefixPath(prefixPath);
     request.setTimestamp(time);
     request.setMeasurements(measurements);
     request.setValues(values);
     request.setIsAligned(isAligned);
+    request.setIsMixed(isMixed);
     return request;
   }
 
@@ -1309,13 +1307,53 @@ public class Session {
           "deviceIds, times, measurementsList and valuesList's size should be equal");
     }
     if (enableCacheLeader) {
-      insertStringRecordsWithLeaderCache(deviceIds, times, measurementsList, valuesList, false);
+      insertStringRecordsWithLeaderCache(
+          deviceIds, times, measurementsList, valuesList, false, false);
     } else {
       TSInsertStringRecordsReq request;
       try {
         request =
             filterAndGenTSInsertStringRecordsReq(
-                deviceIds, times, measurementsList, valuesList, false);
+                deviceIds, times, measurementsList, valuesList, false, false);
+      } catch (NoValidValueException e) {
+        logger.warn(
+            "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
+            deviceIds.toString(),
+            times.toString(),
+            measurementsList.toString());
+        return;
+      }
+      try {
+        defaultSessionConnection.insertRecords(request);
+      } catch (RedirectException e) {
+        Map<String, EndPoint> deviceEndPointMap = e.getDeviceEndPointMap();
+        for (Map.Entry<String, EndPoint> deviceEndPointEntry : deviceEndPointMap.entrySet()) {
+          handleRedirection(deviceEndPointEntry.getKey(), deviceEndPointEntry.getValue());
+        }
+      }
+    }
+  }
+
+  public void insertMixedRecords(
+      List<String> deviceIds,
+      List<Long> times,
+      List<List<String>> measurementsList,
+      List<List<String>> valuesList)
+      throws IoTDBConnectionException, StatementExecutionException {
+    int len = deviceIds.size();
+    if (len != times.size() || len != measurementsList.size() || len != valuesList.size()) {
+      throw new IllegalArgumentException(
+          "deviceIds, times, measurementsList and valuesList's size should be equal");
+    }
+    if (enableCacheLeader) {
+      insertStringRecordsWithLeaderCache(
+          deviceIds, times, measurementsList, valuesList, false, true);
+    } else {
+      TSInsertStringRecordsReq request;
+      try {
+        request =
+            filterAndGenTSInsertStringRecordsReq(
+                deviceIds, times, measurementsList, valuesList, false, true);
       } catch (NoValidValueException e) {
         logger.warn(
             "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
@@ -1561,13 +1599,14 @@ public class Session {
           "prefixPaths, times, subMeasurementsList and valuesList's size should be equal");
     }
     if (enableCacheLeader) {
-      insertStringRecordsWithLeaderCache(deviceIds, times, measurementsList, valuesList, true);
+      insertStringRecordsWithLeaderCache(
+          deviceIds, times, measurementsList, valuesList, true, false);
     } else {
       TSInsertStringRecordsReq request;
       try {
         request =
             filterAndGenTSInsertStringRecordsReq(
-                deviceIds, times, measurementsList, valuesList, true);
+                deviceIds, times, measurementsList, valuesList, true, false);
       } catch (NoValidValueException e) {
         logger.warn(
             "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
@@ -1593,7 +1632,8 @@ public class Session {
       List<Long> times,
       List<List<String>> measurementsList,
       List<List<String>> valuesList,
-      boolean isAligned)
+      boolean isAligned,
+      boolean isMixed)
       throws IoTDBConnectionException, StatementExecutionException {
     Map<SessionConnection, TSInsertStringRecordsReq> recordsGroup = new HashMap<>();
     for (int i = 0; i < deviceIds.size(); i++) {
@@ -1601,6 +1641,7 @@ public class Session {
       TSInsertStringRecordsReq request =
           recordsGroup.computeIfAbsent(connection, k -> new TSInsertStringRecordsReq());
       request.setIsAligned(isAligned);
+      request.setIsMixed(isMixed);
       try {
         filterAndUpdateTSInsertStringRecordsReq(
             request, deviceIds.get(i), times.get(i), measurementsList.get(i), valuesList.get(i));
@@ -1622,7 +1663,8 @@ public class Session {
       List<Long> time,
       List<List<String>> measurements,
       List<List<String>> values,
-      boolean isAligned) {
+      boolean isAligned,
+      boolean isMixed) {
     if (hasNull(values)) {
       values = changeToArrayListWithStringType(values);
       measurements = changeToArrayListWithStringType(measurements);
@@ -1630,7 +1672,7 @@ public class Session {
       time = new ArrayList<>(time);
       filterNullValueAndMeasurementWithStringType(prefixPaths, time, measurements, values);
     }
-    return genTSInsertStringRecordsReq(prefixPaths, time, measurements, values, isAligned);
+    return genTSInsertStringRecordsReq(prefixPaths, time, measurements, values, isAligned, isMixed);
   }
 
   private List<List<String>> changeToArrayListWithStringType(List<List<String>> values) {
@@ -1677,13 +1719,15 @@ public class Session {
       List<Long> time,
       List<List<String>> measurements,
       List<List<String>> values,
-      boolean isAligned) {
+      boolean isAligned,
+      boolean isMixed) {
     TSInsertStringRecordsReq request = new TSInsertStringRecordsReq();
     request.setPrefixPaths(prefixPaths);
     request.setTimestamps(time);
     request.setMeasurementsList(measurements);
     request.setValuesList(values);
     request.setIsAligned(isAligned);
+    request.setIsMixed(isMixed);
     return request;
   }
 
@@ -1740,13 +1784,13 @@ public class Session {
     }
     if (enableCacheLeader) {
       insertRecordsWithLeaderCache(
-          deviceIds, times, measurementsList, typesList, valuesList, false);
+          deviceIds, times, measurementsList, typesList, valuesList, false, false);
     } else {
       TSInsertRecordsReq request;
       try {
         request =
             filterAndGenTSInsertRecordsReq(
-                deviceIds, times, measurementsList, typesList, valuesList, false);
+                deviceIds, times, measurementsList, typesList, valuesList, false, false);
       } catch (NoValidValueException e) {
         logger.warn(
             "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
@@ -1766,6 +1810,45 @@ public class Session {
     }
   }
 
+  public void insertMixedRecords(
+      List<String> deviceIds,
+      List<Long> times,
+      List<List<String>> measurementsList,
+      List<List<TSDataType>> typesList,
+      List<List<Object>> valuesList)
+      throws IoTDBConnectionException, StatementExecutionException {
+    int len = deviceIds.size();
+    if (len != times.size() || len != measurementsList.size() || len != valuesList.size()) {
+      throw new IllegalArgumentException(
+          "deviceIds, times, measurementsList and valuesList's size should be equal");
+    }
+    if (enableCacheLeader) {
+      insertRecordsWithLeaderCache(
+          deviceIds, times, measurementsList, typesList, valuesList, false, true);
+    } else {
+      TSInsertRecordsReq request;
+      try {
+        request =
+            filterAndGenTSInsertRecordsReq(
+                deviceIds, times, measurementsList, typesList, valuesList, false, true);
+      } catch (NoValidValueException e) {
+        logger.warn(
+            "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
+            deviceIds.toString(),
+            times.toString(),
+            measurementsList.toString());
+        return;
+      }
+      try {
+        defaultSessionConnection.insertRecords(request);
+      } catch (RedirectException e) {
+        Map<String, EndPoint> deviceEndPointMap = e.getDeviceEndPointMap();
+        for (Map.Entry<String, EndPoint> deviceEndPointEntry : deviceEndPointMap.entrySet()) {
+          handleRedirection(deviceEndPointEntry.getKey(), deviceEndPointEntry.getValue());
+        }
+      }
+    }
+  }
   /**
    * Insert aligned multiple rows, which can reduce the overhead of network. This method is just
    * like jdbc executeBatch, we pack some insert request in batch and send them to server. If you
@@ -1789,13 +1872,14 @@ public class Session {
           "prefixPaths, times, subMeasurementsList and valuesList's size should be equal");
     }
     if (enableCacheLeader) {
-      insertRecordsWithLeaderCache(deviceIds, times, measurementsList, typesList, valuesList, true);
+      insertRecordsWithLeaderCache(
+          deviceIds, times, measurementsList, typesList, valuesList, true, false);
     } else {
       TSInsertRecordsReq request;
       try {
         request =
             filterAndGenTSInsertRecordsReq(
-                deviceIds, times, measurementsList, typesList, valuesList, true);
+                deviceIds, times, measurementsList, typesList, valuesList, true, false);
       } catch (NoValidValueException e) {
         logger.warn(
             "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
@@ -2207,7 +2291,8 @@ public class Session {
       List<List<String>> measurementsList,
       List<List<TSDataType>> typesList,
       List<List<Object>> valuesList,
-      boolean isAligned)
+      boolean isAligned,
+      boolean isMixed)
       throws IoTDBConnectionException, StatementExecutionException {
     Map<SessionConnection, TSInsertRecordsReq> recordsGroup = new HashMap<>();
     for (int i = 0; i < deviceIds.size(); i++) {
@@ -2215,6 +2300,7 @@ public class Session {
       TSInsertRecordsReq request =
           recordsGroup.computeIfAbsent(connection, k -> new TSInsertRecordsReq());
       request.setIsAligned(isAligned);
+      request.setIsMixed(isMixed);
       try {
         filterAndUpdateTSInsertRecordsReq(
             request,
@@ -2241,7 +2327,8 @@ public class Session {
       List<List<String>> measurementsList,
       List<List<TSDataType>> typesList,
       List<List<Object>> valuesList,
-      boolean isAligned)
+      boolean isAligned,
+      boolean isMixed)
       throws IoTDBConnectionException {
     if (hasNull(valuesList)) {
       measurementsList = changeToArrayListWithStringType(measurementsList);
@@ -2252,7 +2339,7 @@ public class Session {
       filterNullValueAndMeasurement(deviceIds, times, measurementsList, valuesList, typesList);
     }
     return genTSInsertRecordsReq(
-        deviceIds, times, measurementsList, typesList, valuesList, isAligned);
+        deviceIds, times, measurementsList, typesList, valuesList, isAligned, isMixed);
   }
 
   private TSInsertRecordsReq genTSInsertRecordsReq(
@@ -2261,7 +2348,8 @@ public class Session {
       List<List<String>> measurementsList,
       List<List<TSDataType>> typesList,
       List<List<Object>> valuesList,
-      boolean isAligned)
+      boolean isAligned,
+      boolean isMixed)
       throws IoTDBConnectionException {
     TSInsertRecordsReq request = new TSInsertRecordsReq();
     request.setPrefixPaths(deviceIds);
@@ -2270,6 +2358,7 @@ public class Session {
     request.setIsAligned(isAligned);
     List<ByteBuffer> buffersList = objectValuesListToByteBufferList(valuesList, typesList);
     request.setValuesList(buffersList);
+    request.setIsMixed(isMixed);
     return request;
   }
 
@@ -2567,7 +2656,7 @@ public class Session {
     try {
       request =
           filterAndGenTSInsertStringRecordsReq(
-              deviceIds, times, measurementsList, valuesList, false);
+              deviceIds, times, measurementsList, valuesList, false, false);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
@@ -2595,7 +2684,7 @@ public class Session {
     try {
       request =
           filterAndGenTSInsertRecordsReq(
-              deviceIds, times, measurementsList, typesList, valuesList, false);
+              deviceIds, times, measurementsList, typesList, valuesList, false, false);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceIds are [{}],times are [{}],measurements are [{}]",
@@ -2617,7 +2706,8 @@ public class Session {
       throws IoTDBConnectionException, StatementExecutionException {
     TSInsertStringRecordReq request;
     try {
-      request = filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, false);
+      request =
+          filterAndGenTSInsertStringRecordReq(deviceId, time, measurements, values, false, false);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",
@@ -2642,7 +2732,8 @@ public class Session {
       throws IoTDBConnectionException, StatementExecutionException {
     TSInsertRecordReq request;
     try {
-      request = filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, false);
+      request =
+          filterAndGenTSInsertRecordReq(deviceId, time, measurements, types, values, false, false);
     } catch (NoValidValueException e) {
       logger.warn(
           "All values are null and this submission is ignored,deviceId is [{}],time is [{}],measurements is [{}]",

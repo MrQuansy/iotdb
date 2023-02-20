@@ -118,6 +118,11 @@ public class BatchData {
     }
   }
 
+  public void setPosition(int position) {
+    readCurListIndex = position / capacity;
+    readCurArrayIndex = position % readCurArrayIndex;
+  }
+
   public long currentTime() {
     return this.timeRet.get(readCurListIndex)[readCurArrayIndex];
   }

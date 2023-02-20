@@ -34,7 +34,7 @@ import org.apache.iotdb.db.metadata.path.MixedGroupPath;
 import org.apache.iotdb.db.metadata.path.PartialPath;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
-import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.utils.TestOnly;
 import org.apache.iotdb.tsfile.read.TimeValuePair;
@@ -61,7 +61,7 @@ public interface IDTable {
    */
   void createAlignedTimeseries(CreateAlignedTimeSeriesPlan plan) throws MetadataException;
 
-  void createMixedGroupTimeseries(CreateMixedGroupTimeSeriesPlan plan);
+  void createMixedGroupTimeseries(CreateMixedTimeSeriesPlan plan);
   /**
    * create timeseries
    *

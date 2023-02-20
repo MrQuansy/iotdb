@@ -146,7 +146,7 @@ public class MemTableFlushTask {
       encodingTaskQueue.put(new EndChunkGroupIoTask());
     }
     encodingTaskQueue.put(new TaskEnd());
-    LOGGER.debug(
+    LOGGER.info(
         "Storage group {} memtable flushing into file {}: data sort time cost {} ms.",
         storageGroup,
         writer.getFile().getName(),
@@ -255,7 +255,7 @@ public class MemTableFlushTask {
             Thread.currentThread().interrupt();
           }
 
-          LOGGER.debug(
+          LOGGER.info(
               "Storage group {}, flushing memtable {} into disk: Encoding data cost " + "{} ms.",
               storageGroup,
               writer.getFile().getName(),
@@ -316,7 +316,7 @@ public class MemTableFlushTask {
                   Tag.TYPE.toString(),
                   "flush");
         }
-        LOGGER.debug(
+        LOGGER.info(
             "flushing a memtable to file {} in storage group {}, io cost {}ms",
             writer.getFile().getName(),
             storageGroup,

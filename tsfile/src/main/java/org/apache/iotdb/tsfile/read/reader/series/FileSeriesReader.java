@@ -62,7 +62,7 @@ public class FileSeriesReader extends AbstractFileSeriesReader {
       } else if (chunk.getHeader().getChunkType() == MetaMarker.MIXED_GROUP_CHUNK_HEADER
           || chunk.getHeader().getChunkType()
               == MetaMarker.ONLY_ONE_PAGE_MIXED_GROUP_CHUNK_HEADER) {
-        this.chunkReader = new MixedGroupChunkReader(chunk, filter, deviceIdentifier);
+        this.chunkReader = new MixedGroupChunkReader(chunk, filter, deviceIdentifier, false);
       }
     } else {
       AlignedChunkMetadata alignedChunkMetadata = (AlignedChunkMetadata) chunkMetaData;

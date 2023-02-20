@@ -52,7 +52,7 @@ import org.apache.iotdb.db.qp.physical.crud.UDFPlan;
 import org.apache.iotdb.db.qp.physical.sys.ActivateTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.AppendTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
-import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateMultiTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
@@ -95,7 +95,7 @@ import org.apache.iotdb.service.rpc.thrift.TSCloseOperationReq;
 import org.apache.iotdb.service.rpc.thrift.TSCloseSessionReq;
 import org.apache.iotdb.service.rpc.thrift.TSConnectionInfoResp;
 import org.apache.iotdb.service.rpc.thrift.TSCreateAlignedTimeseriesReq;
-import org.apache.iotdb.service.rpc.thrift.TSCreateMixedGroupTimeseriesReq;
+import org.apache.iotdb.service.rpc.thrift.TSCreateMixedTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateMultiTimeseriesReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateSchemaTemplateReq;
 import org.apache.iotdb.service.rpc.thrift.TSCreateTimeseriesReq;
@@ -111,7 +111,6 @@ import org.apache.iotdb.service.rpc.thrift.TSFetchResultsResp;
 import org.apache.iotdb.service.rpc.thrift.TSGetSystemStatusResp;
 import org.apache.iotdb.service.rpc.thrift.TSGetTimeZoneResp;
 import org.apache.iotdb.service.rpc.thrift.TSIService;
-import org.apache.iotdb.service.rpc.thrift.TSInsertMixedGroupRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsOfOneDeviceReq;
 import org.apache.iotdb.service.rpc.thrift.TSInsertRecordsReq;
@@ -1248,6 +1247,7 @@ public class TSServiceImpl implements TSIService.Iface {
                 req.getMeasurementsList().get(i).toArray(new String[0]),
                 req.valuesList.get(i),
                 req.isAligned);
+        plan.setMixedGroup(req.isMixed);
         TSStatus status = serviceProvider.checkAuthority(plan, session);
         if (status != null) {
           insertRowsPlan.getResults().put(i, status);
@@ -1443,6 +1443,7 @@ public class TSServiceImpl implements TSIService.Iface {
         plan.setDataTypes(new TSDataType[plan.getMeasurements().length]);
         plan.setNeedInferType(true);
         plan.setAligned(req.isAligned);
+        plan.setMixedGroup(req.isMixed);
         TSStatus status = serviceProvider.checkAuthority(plan, session);
 
         if (status != null) {
@@ -1555,88 +1556,7 @@ public class TSServiceImpl implements TSIService.Iface {
               req.getMeasurements().toArray(new String[0]),
               req.values,
               req.isAligned);
-      TSStatus status = serviceProvider.checkAuthority(plan, session);
-
-      if (status != null) {
-        return status;
-      }
-
-      return executeNonQueryPlan(plan);
-    } catch (IoTDBException e) {
-      return onIoTDBException(e, OperationType.INSERT_RECORD, e.getErrorCode());
-    } catch (Exception e) {
-      return onNPEOrUnexpectedException(
-          e, OperationType.INSERT_RECORD, TSStatusCode.EXECUTE_STATEMENT_ERROR);
-    }
-  }
-
-  //  @Override
-  //  public TSStatus insertMixedGroupRecord(TSInsertMixedGroupRecordReq req) throws TException {
-  //    IClientSession session = SESSION_MANAGER.getCurrSession();
-  //    try {
-  //      TSStatus loginStatus = checkLoginStatus(session);
-  //      if (isStatusNotSuccess(loginStatus)) {
-  //        return loginStatus;
-  //      }
-  //      if (!req.getPrefixPath().startsWith(SYSTEM_STORAGE_GROUP)
-  //          && conf.isEnableAuditLogWrite()
-  //          && enableAuditLog) {
-  //        AuditLogUtils.writeAuditLog(
-  //            String.format(
-  //                "Session %s insertMixedGroupRecord, device group %s, time %s, device identifier
-  // %s",
-  //                session, req.getPrefixPath(), req.getTimestamp(), req.getDeviceIdentifier()));
-  //      }
-  //
-  //      InsertMixedGroupRowPlan plan =
-  //          new InsertMixedGroupRowPlan(
-  //              new PartialPath(req.getPrefixPath()),
-  //              req.getTimestamp(),
-  //              req.getMeasurements().toArray(new String[0]),
-  //              req.values,
-  //              req.isAligned,
-  //              req.deviceIdentifier);
-  //      TSStatus status = serviceProvider.checkAuthority(plan, session);
-  //
-  //      if (status != null) {
-  //        return status;
-  //      }
-  //
-  //      return executeNonQueryPlan(plan);
-  //    } catch (IoTDBException e) {
-  //      return onIoTDBException(e, OperationType.INSERT_RECORD, e.getErrorCode());
-  //    } catch (Exception e) {
-  //      return onNPEOrUnexpectedException(
-  //          e, OperationType.INSERT_RECORD, TSStatusCode.EXECUTE_STATEMENT_ERROR);
-  //    }
-  //  }
-
-  // todo v2
-  @Override
-  public TSStatus insertMixedGroupRecord(TSInsertMixedGroupRecordReq req) throws TException {
-    IClientSession session = SESSION_MANAGER.getCurrSession();
-    try {
-      TSStatus loginStatus = checkLoginStatus(session);
-      if (isStatusNotSuccess(loginStatus)) {
-        return loginStatus;
-      }
-      if (!req.getPrefixPath().startsWith(SYSTEM_STORAGE_GROUP)
-          && conf.isEnableAuditLogWrite()
-          && enableAuditLog) {
-        AuditLogUtils.writeAuditLog(
-            String.format(
-                "Session %s insertMixedGroupRecord, device group %s, time %s, device identifier %s",
-                session, req.getPrefixPath(), req.getTimestamp(), req.getDeviceIdentifier()));
-      }
-
-      InsertRowPlan plan =
-          new InsertRowPlan(
-              new PartialPath(req.getPrefixPath()),
-              req.getTimestamp(),
-              req.getMeasurements().toArray(new String[0]),
-              req.values,
-              req.isAligned);
-      plan.setMixedGroup(true);
+      plan.setMixedGroup(req.isMixed);
       TSStatus status = serviceProvider.checkAuthority(plan, session);
 
       if (status != null) {
@@ -1675,6 +1595,7 @@ public class TSServiceImpl implements TSIService.Iface {
       plan.setValues(req.getValues().toArray(new Object[0]));
       plan.setNeedInferType(true);
       plan.setAligned(req.isAligned);
+      plan.setMixedGroup(req.isMixed);
       TSStatus status = serviceProvider.checkAuthority(plan, session);
 
       if (status != null) {
@@ -1943,68 +1864,7 @@ public class TSServiceImpl implements TSIService.Iface {
   }
 
   @Override
-  public TSStatus createMixedGroupTimeseries(TSCreateMixedGroupTimeseriesReq req)
-      throws TException {
-    //    IClientSession session = SESSION_MANAGER.getCurrSession();
-    //    try {
-    //      TSStatus loginStatus = checkLoginStatus(session);
-    //      if (isStatusNotSuccess(loginStatus)) {
-    //        return loginStatus;
-    //      }
-    //      //      if (enableAuditLog) {
-    //      //        AuditLogUtils.writeAuditLog(
-    //      //                String.format(
-    //      //                        "Session-%s create %s timeseries, the first is %s",
-    //      //                        session, req.getPaths().size(), req.getPaths().get(0)));
-    //      //      }
-    //
-    //      CreateMultiTimeSeriesPlan multiPlan = new CreateMultiTimeSeriesPlan();
-    //      List<PartialPath> paths = new ArrayList<>(req.measurements.size());
-    //      List<TSDataType> dataTypes = new ArrayList<>(req.dataTypes.size());
-    //      List<TSEncoding> encodings = new ArrayList<>(req.dataTypes.size());
-    //      List<CompressionType> compressors = new ArrayList<>(req.measurements.size());
-    //      List<String> alias = null;
-    //      if (req.measurementAlias != null) {
-    //        alias = new ArrayList<>(req.measurements.size());
-    //      }
-    //
-    //      // for authority check
-    //      CreateTimeSeriesPlan plan = new CreateTimeSeriesPlan();
-    //      for (int i = 0; i < req.measurements.size(); i++) {
-    //        PartialPath path = new PartialPath(req.prefixPath + "." + req.measurements.get(i));
-    //        plan.setPath(path);
-    //        TSStatus status = serviceProvider.checkAuthority(plan, session);
-    //        if (status != null) {
-    //          // not authorized
-    //          multiPlan.getResults().put(i, status);
-    //        }
-    //
-    //        paths.add(path);
-    //        compressors.add(CompressionType.deserialize(req.compressors.get(i).byteValue()));
-    //        if (alias != null) {
-    //          alias.add(req.measurementAlias.get(i));
-    //        }
-    //      }
-    //      for (int i = 0; i < req.dataTypes.size(); i++) {
-    //        dataTypes.add(TSDataType.values()[req.dataTypes.get(i)]);
-    //        encodings.add(TSEncoding.values()[req.encodings.get(i)]);
-    //      }
-    //
-    //      multiPlan.setPaths(paths);
-    //      multiPlan.setDataTypes(dataTypes);
-    //      multiPlan.setEncodings(encodings);
-    //      multiPlan.setCompressors(compressors);
-    //      multiPlan.setAlias(alias);
-    //      multiPlan.setIndexes(new ArrayList<>());
-    //      return executeNonQueryPlan(multiPlan);
-    //    } catch (IoTDBException e) {
-    //      return onIoTDBException(e, OperationType.CREATE_MULTI_TIMESERIES, e.getErrorCode());
-    //    } catch (Exception e) {
-    //      LOGGER.error("creating multi timeseries fails", e);
-    //      return onNPEOrUnexpectedException(
-    //          e, OperationType.CREATE_MULTI_TIMESERIES, TSStatusCode.EXECUTE_STATEMENT_ERROR);
-    //    }
-
+  public TSStatus createMixedTimeseries(TSCreateMixedTimeseriesReq req) throws TException {
     IClientSession session = SESSION_MANAGER.getCurrSession();
     try {
       TSStatus loginStatus = checkLoginStatus(session);
@@ -2014,7 +1874,7 @@ public class TSServiceImpl implements TSIService.Iface {
       if (enableAuditLog) {
         AuditLogUtils.writeAuditLog(
             String.format(
-                "Session-%s create aligned timeseries %s.%s",
+                "Session-%s create mixed timeseries %s.%s",
                 session, req.getPrefixPath(), req.getMeasurements()));
       }
 
@@ -2031,8 +1891,8 @@ public class TSServiceImpl implements TSIService.Iface {
         compressors.add(CompressionType.deserialize((byte) compressor));
       }
 
-      CreateMixedGroupTimeSeriesPlan plan =
-          new CreateMixedGroupTimeSeriesPlan(
+      CreateMixedTimeSeriesPlan plan =
+          new CreateMixedTimeSeriesPlan(
               new PartialPath(req.prefixPath),
               req.measurements,
               dataTypes,

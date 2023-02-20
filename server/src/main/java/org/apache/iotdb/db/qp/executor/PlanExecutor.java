@@ -93,7 +93,7 @@ import org.apache.iotdb.db.qp.physical.sys.CountPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateContinuousQueryPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateFunctionPlan;
-import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateMultiTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
@@ -333,8 +333,8 @@ public class PlanExecutor implements IPlanExecutor {
         return createTimeSeries((CreateTimeSeriesPlan) plan);
       case CREATE_ALIGNED_TIMESERIES:
         return createAlignedTimeSeries((CreateAlignedTimeSeriesPlan) plan);
-      case CREATE_MIXED_GROUP_TIMESERIES:
-        return createMixedGroupTimeSeries((CreateMixedGroupTimeSeriesPlan) plan);
+      case CREATE_MIXED_TIMESERIES:
+        return createMixedTimeSeries((CreateMixedTimeSeriesPlan) plan);
       case CREATE_MULTI_TIMESERIES:
         return createMultiTimeSeries((CreateMultiTimeSeriesPlan) plan);
       case ALTER_TIMESERIES:
@@ -2138,10 +2138,10 @@ public class PlanExecutor implements IPlanExecutor {
     return true;
   }
 
-  private boolean createMixedGroupTimeSeries(
-      CreateMixedGroupTimeSeriesPlan createMixedGroupTimeSeriesPlan) throws QueryProcessException {
+  private boolean createMixedTimeSeries(CreateMixedTimeSeriesPlan createMixedTimeSeriesPlan)
+      throws QueryProcessException {
     try {
-      IoTDB.metaManager.createMixedGroupTimeSeries(createMixedGroupTimeSeriesPlan);
+      IoTDB.metaManager.createMixedTimeSeries(createMixedTimeSeriesPlan);
     } catch (MetadataException e) {
       throw new QueryProcessException(e);
     }

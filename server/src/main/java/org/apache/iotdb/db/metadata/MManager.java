@@ -69,7 +69,7 @@ import org.apache.iotdb.db.qp.physical.sys.AutoCreateDeviceMNodePlan;
 import org.apache.iotdb.db.qp.physical.sys.ChangeAliasPlan;
 import org.apache.iotdb.db.qp.physical.sys.ChangeTagOffsetPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
-import org.apache.iotdb.db.qp.physical.sys.CreateMixedGroupTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTemplatePlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.DeactivateTemplatePlan;
@@ -752,8 +752,7 @@ public class MManager {
    *
    * @param plan CreateMixedGroupTimeSeriesPlan
    */
-  public void createMixedGroupTimeSeries(CreateMixedGroupTimeSeriesPlan plan)
-      throws MetadataException {
+  public void createMixedTimeSeries(CreateMixedTimeSeriesPlan plan) throws MetadataException {
     if (!allowToCreateNewSeries) {
       throw new MetadataException(
           "IoTDB system load is too large to create timeseries, "
@@ -779,7 +778,7 @@ public class MManager {
         ensureStorageGroup(prefixPath);
 
         // create time series in MTree
-        mtree.createMixedGroupTimeseries(
+        mtree.createMixedTimeseries(
             prefixPath,
             measurements,
             plan.getDataTypes(),

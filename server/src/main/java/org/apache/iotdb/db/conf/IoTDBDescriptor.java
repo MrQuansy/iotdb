@@ -1007,6 +1007,11 @@ public class IoTDBDescriptor {
                 "enable_discard_out_of_order_data",
                 Boolean.toString(conf.isEnableDiscardOutOfOrderData()))));
 
+    conf.setEnableMixedGroup(
+        Boolean.parseBoolean(
+            properties.getProperty(
+                "enable_mixed_group", Boolean.toString(conf.isEnableMixedGroup()))));
+
     int walBufferSize =
         Integer.parseInt(
             properties.getProperty("wal_buffer_size", Integer.toString(conf.getWalBufferSize())));

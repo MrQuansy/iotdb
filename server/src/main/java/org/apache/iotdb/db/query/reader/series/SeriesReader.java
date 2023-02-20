@@ -122,6 +122,8 @@ public class SeriesReader {
 
   private byte deviceIdentifier;
 
+  private boolean isGetAllData;
+
   /**
    * @param seriesPath For querying aligned series, the seriesPath should be AlignedPath. All
    *     selected series belonging to one aligned device should be all in this one AlignedPath's
@@ -174,6 +176,7 @@ public class SeriesReader {
     if (seriesPath instanceof MixedGroupPath) {
       isMixedGroupSeries = true;
       deviceIdentifier = ((MixedGroupPath) seriesPath).getDeviceIdentifier();
+      isGetAllData = ((MixedGroupPath) seriesPath).isGetAllData();
     } else isMixedGroupSeries = false;
   }
 
@@ -601,7 +604,8 @@ public class SeriesReader {
     List<IPageReader> pageReaderList;
     if (isMixedGroupSeries) {
       pageReaderList =
-          FileLoaderUtils.loadMixedGroupPageReaderList(chunkMetaData, timeFilter, deviceIdentifier);
+          FileLoaderUtils.loadMixedGroupPageReaderList(
+              chunkMetaData, timeFilter, deviceIdentifier, isGetAllData);
     } else {
       pageReaderList = FileLoaderUtils.loadPageReaderList(chunkMetaData, timeFilter);
     }

@@ -59,9 +59,10 @@ public class DiskChunkLoader implements IChunkLoader {
   }
 
   public IChunkReader getMixedGroupChunkReader(
-      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier) throws IOException {
+      IChunkMetadata chunkMetaData, Filter timeFilter, byte deviceIdentifier, boolean getAllData)
+      throws IOException {
     Chunk chunk = ChunkCache.getInstance().get((ChunkMetadata) chunkMetaData, debug);
     chunk.setFromOldFile(chunkMetaData.isFromOldTsFile());
-    return new MixedGroupChunkReader(chunk, timeFilter, deviceIdentifier);
+    return new MixedGroupChunkReader(chunk, timeFilter, deviceIdentifier, getAllData);
   }
 }
