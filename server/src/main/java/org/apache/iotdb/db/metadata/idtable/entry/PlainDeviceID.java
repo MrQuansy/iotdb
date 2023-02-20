@@ -55,4 +55,9 @@ public class PlainDeviceID implements IDeviceID {
   public String toStringID() {
     return deviceID;
   }
+
+  @Override
+  public long getSize() {
+    return 40 + deviceID.length() * 2L;
+  }
 }

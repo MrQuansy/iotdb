@@ -27,5 +27,7 @@ public interface IDeviceID {
    *
    * @return string format device id
    */
-  public String toStringID();
+  String toStringID();
+
+  long getSize();
 }

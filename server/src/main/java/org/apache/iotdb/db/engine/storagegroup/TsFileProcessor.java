@@ -92,6 +92,10 @@ public class TsFileProcessor {
   /** logger fot this class */
   private static final Logger logger = LoggerFactory.getLogger(TsFileProcessor.class);
 
+  private long BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY = 112;
+
+  private long BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY = 232;
+
   /** storgae group name of this tsfile */
   private final String storageGroupName;
 
@@ -360,6 +364,10 @@ public class TsFileProcessor {
       throw new WriteProcessException(e);
     }
 
+    if (workMemTable.checkIfChunkGroupDoesNotExist(deviceID)) {
+      memTableIncrement += BASE_SIZE_WRITABLE_MEM_CHUNK_GROUP_ENTRY + deviceID.getSize();
+    }
+
     for (int i = 0; i < insertRowPlan.getDataTypes().length; i++) {
       // skip failed Measurements
       if (insertRowPlan.getDataTypes()[i] == null || insertRowPlan.getMeasurements()[i] == null) {
@@ -373,6 +381,8 @@ public class TsFileProcessor {
         memTableIncrement +=
             TVList.tvListArrayMemCost(
                 insertRowPlan.isMixedGroup(), insertRowPlan.getDataTypes()[i]);
+        memTableIncrement +=
+            BASE_SIZE_WRITABLE_MEM_CHUNK_ENTRY + insertRowPlan.getMeasurements()[i].length() * 2L;
       } else {
         // here currentChunkPointNum >= 1
         long currentChunkPointNum =
@@ -684,9 +694,10 @@ public class TsFileProcessor {
     }
     if (workMemTable.shouldFlush()) {
       logger.info(
-          "The memtable size {} of tsfile {} reaches the mem control threshold",
+          "The memtable size {} of tsfile {} reaches the mem control threshold. Time consumption: {}ms",
           workMemTable.memSize(),
-          tsFileResource.getTsFile().getAbsolutePath());
+          tsFileResource.getTsFile().getAbsolutePath(),
+          System.currentTimeMillis() - workMemTable.getCreatedTime());
       return true;
     }
     if (!enableMemControl && workMemTable.memSize() >= getMemtableSizeThresholdBasedOnSeriesNum()) {

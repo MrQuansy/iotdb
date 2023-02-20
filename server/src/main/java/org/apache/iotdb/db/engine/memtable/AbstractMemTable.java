@@ -393,6 +393,11 @@ public abstract class AbstractMemTable implements IMemTable {
   }
 
   @Override
+  public boolean checkIfChunkGroupDoesNotExist(IDeviceID deviceId) {
+    return !memTableMap.containsKey(deviceId);
+  }
+
+  @Override
   public long getCurrentTVListSize(IDeviceID deviceId, String measurement) {
     IWritableMemChunkGroup memChunkGroup = memTableMap.get(deviceId);
     return memChunkGroup.getCurrentTVListSize(measurement);

@@ -145,4 +145,9 @@ public class SHA256DeviceID implements IDeviceID {
   public String toStringID() {
     return l1 + SEPARATOR + l2 + SEPARATOR + l3 + SEPARATOR + l4;
   }
+
+  @Override
+  public long getSize() {
+    return 32;
+  }
 }

@@ -186,10 +186,13 @@ public class MemTableFlushTask {
     }
 
     LOGGER.info(
-        "Storage group {} memtable {} flushing a memtable has finished! Time consumption: {}ms",
+        "Storage group {} memtable {} flushing a memtable has finished! Time consumption: {}ms. Sort time consumption: {}ms, encoding time consumption: {}ms, io time consumption: {}ms.",
         storageGroup,
         memTable,
-        System.currentTimeMillis() - start);
+        System.currentTimeMillis() - start,
+        sortTime,
+        memSerializeTime,
+        ioTime);
   }
 
   /** encoding task (second task of pipeline) */
