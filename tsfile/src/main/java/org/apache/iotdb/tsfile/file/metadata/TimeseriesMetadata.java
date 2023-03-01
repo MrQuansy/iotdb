@@ -19,6 +19,7 @@
 
 package org.apache.iotdb.tsfile.file.metadata;
 
+import org.apache.iotdb.tsfile.common.conf.TSFileDescriptor;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.statistics.Statistics;
 import org.apache.iotdb.tsfile.read.controller.IChunkMetadataLoader;
@@ -108,7 +109,9 @@ public class TimeseriesMetadata implements ITimeSeriesMetadata {
     timeseriesMetaData.setTSDataType(ReadWriteIOUtils.readDataType(buffer));
     int chunkMetaDataListDataSize = ReadWriteForEncodingUtils.readUnsignedVarInt(buffer);
     timeseriesMetaData.setDataSizeOfChunkMetaDataList(chunkMetaDataListDataSize);
-    timeseriesMetaData.setStatistics(Statistics.deserialize(buffer, timeseriesMetaData.dataType));
+    if (TSFileDescriptor.getInstance().getConfig().isNeedStatistic()) {
+      timeseriesMetaData.setStatistics(Statistics.deserialize(buffer, timeseriesMetaData.dataType));
+    }
     if (needChunkMetadata) {
       ByteBuffer byteBuffer = buffer.slice();
       byteBuffer.limit(chunkMetaDataListDataSize);
@@ -134,7 +137,10 @@ public class TimeseriesMetadata implements ITimeSeriesMetadata {
     String measurementID = ReadWriteIOUtils.readVarIntString(buffer);
     TSDataType tsDataType = ReadWriteIOUtils.readDataType(buffer);
     int chunkMetaDataListDataSize = ReadWriteForEncodingUtils.readUnsignedVarInt(buffer);
-    Statistics<? extends Serializable> statistics = Statistics.deserialize(buffer, tsDataType);
+    Statistics<? extends Serializable> statistics = null;
+    if (TSFileDescriptor.getInstance().getConfig().isNeedStatistic()) {
+      statistics = Statistics.deserialize(buffer, tsDataType);
+    }
     if (excludedMeasurements.contains(measurementID)) {
       buffer.position(buffer.position() + chunkMetaDataListDataSize);
       return null;
@@ -174,7 +180,9 @@ public class TimeseriesMetadata implements ITimeSeriesMetadata {
     byteLen += ReadWriteIOUtils.write(dataType, outputStream);
     byteLen +=
         ReadWriteForEncodingUtils.writeUnsignedVarInt(chunkMetaDataListDataSize, outputStream);
-    byteLen += statistics.serialize(outputStream);
+    if (TSFileDescriptor.getInstance().getConfig().isNeedStatistic()) {
+      byteLen += statistics.serialize(outputStream);
+    }
     chunkMetadataListBuffer.writeTo(outputStream);
     byteLen += chunkMetadataListBuffer.size();
     return byteLen;

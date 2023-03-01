@@ -913,6 +913,44 @@ public class VirtualStorageGroupProcessor {
     }
   }
 
+  public void insert(List<InsertRowPlan> insertRowPlanList)
+      throws WriteProcessException, TriggerExecutionException {
+    writeLock("InsertRow");
+    try {
+      for (InsertRowPlan insertRowPlan : insertRowPlanList) {
+        // init map
+        long timePartitionId = StorageEngine.getTimePartition(insertRowPlan.getTime());
+
+        lastFlushTimeManager.ensureFlushedTimePartition(timePartitionId);
+
+        boolean isSequence =
+            insertRowPlan.getTime()
+                > lastFlushTimeManager.getFlushedTime(
+                    timePartitionId, insertRowPlan.getDevicePath().getFullPath());
+
+        // todo sequence determine
+        isSequence = true;
+
+        // is unsequence and user set config to discard out of order data
+        if (!isSequence
+            && IoTDBDescriptor.getInstance().getConfig().isEnableDiscardOutOfOrderData()) {
+          return;
+        }
+
+        lastFlushTimeManager.ensureLastTimePartition(timePartitionId);
+
+        // fire trigger before insertion
+        TriggerEngine.fire(TriggerEvent.BEFORE_INSERT, insertRowPlan);
+        // insert to sequence or unSequence file
+        insertToTsFileProcessor(insertRowPlan, isSequence, timePartitionId);
+        // fire trigger after insertion
+        TriggerEngine.fire(TriggerEvent.AFTER_INSERT, insertRowPlan);
+      }
+    } finally {
+      writeUnlock();
+    }
+  }
+
   /**
    * Insert a tablet (rows belonging to the same devices) into this storage group.
    *

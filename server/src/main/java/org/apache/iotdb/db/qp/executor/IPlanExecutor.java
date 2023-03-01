@@ -109,7 +109,8 @@ public interface IPlanExecutor {
    *
    * @param insertRowsPlan physical insert rows plan, which contains multi insertRowPlans
    */
-  void insert(InsertRowsPlan insertRowsPlan) throws QueryProcessException;
+  void insert(InsertRowsPlan insertRowsPlan)
+      throws QueryProcessException, StorageEngineException, MetadataException;
 
   /**
    * execute insert command and return whether the operator is successful.

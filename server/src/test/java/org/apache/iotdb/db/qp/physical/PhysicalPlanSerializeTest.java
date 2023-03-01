@@ -30,6 +30,7 @@ import org.apache.iotdb.db.qp.physical.PhysicalPlan.Factory;
 import org.apache.iotdb.db.qp.physical.sys.AlterTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.AuthorPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateAlignedTimeSeriesPlan;
+import org.apache.iotdb.db.qp.physical.sys.CreateMixedTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateMultiTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.CreateTimeSeriesPlan;
 import org.apache.iotdb.db.qp.physical.sys.DataAuthPlan;
@@ -205,6 +206,22 @@ public class PhysicalPlanSerializeTest {
 
     Assert.assertEquals(OperatorType.CREATE_ALIGNED_TIMESERIES, result.getOperatorType());
     Assert.assertEquals(createAlignedTimeSeriesPlan, result);
+  }
+
+  @Test
+  public void createMixedTimeSeriesPlanSerializeTest() throws IllegalPathException, IOException {
+    CreateMixedTimeSeriesPlan createMixedTimeSeriesPlan =
+        new CreateMixedTimeSeriesPlan(
+            new PartialPath("root.sg.d1"),
+            Arrays.asList("s1", "s2"),
+            Arrays.asList(TSDataType.DOUBLE, TSDataType.INT32),
+            Arrays.asList(TSEncoding.RLE, TSEncoding.RLE),
+            Arrays.asList(CompressionType.SNAPPY, CompressionType.SNAPPY),
+            null);
+    PhysicalPlan result = testTwoSerializeMethodAndDeserialize(createMixedTimeSeriesPlan);
+
+    Assert.assertEquals(OperatorType.CREATE_MIXED_TIMESERIES, result.getOperatorType());
+    Assert.assertEquals(createMixedTimeSeriesPlan, result);
   }
 
   @Test

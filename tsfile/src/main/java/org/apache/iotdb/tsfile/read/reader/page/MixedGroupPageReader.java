@@ -95,6 +95,12 @@ public class MixedGroupPageReader implements IPageReader {
       while (timeDecoder.hasNext(timeBuffer)) {
         long timestamp = timeDecoder.readLong(timeBuffer);
         int deviceId = deviceColumnDecoder.readInt(deviceColumnBuffer);
+
+        // todo
+        if (deviceId > deviceIdentifier) {
+          break;
+        }
+
         switch (dataType) {
           case BOOLEAN:
             boolean aBoolean = valueDecoder.readBoolean(valueBuffer);

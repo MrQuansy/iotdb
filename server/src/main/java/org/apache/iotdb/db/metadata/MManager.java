@@ -476,6 +476,10 @@ public class MManager {
             (CreateAlignedTimeSeriesPlan) plan;
         createAlignedTimeSeries(createAlignedTimeSeriesPlan);
         break;
+      case CREATE_MIXED_TIMESERIES:
+        CreateMixedTimeSeriesPlan createMixedTimeSeriesPlan = (CreateMixedTimeSeriesPlan) plan;
+        createMixedTimeSeries(createMixedTimeSeriesPlan);
+        break;
       case DELETE_TIMESERIES:
         DeleteTimeSeriesPlan deleteTimeSeriesPlan = (DeleteTimeSeriesPlan) plan;
         // cause we only has one path for one DeleteTimeSeriesPlan

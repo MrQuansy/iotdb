@@ -95,6 +95,9 @@ public class SeriesAggregateReader implements IAggregateReader {
 
   @Override
   public boolean canUseCurrentFileStatistics() throws IOException {
+    if (seriesReader.isMixedGroupSeries()) {
+      return false;
+    }
     Statistics fileStatistics = currentFileStatistics();
     return !seriesReader.isFileOverlapped()
         && containedByTimeFilter(fileStatistics)
@@ -118,6 +121,9 @@ public class SeriesAggregateReader implements IAggregateReader {
 
   @Override
   public boolean canUseCurrentChunkStatistics() throws IOException {
+    if (seriesReader.isMixedGroupSeries()) {
+      return false;
+    }
     Statistics chunkStatistics = currentChunkStatistics();
     return !seriesReader.isChunkOverlapped()
         && containedByTimeFilter(chunkStatistics)
@@ -141,6 +147,9 @@ public class SeriesAggregateReader implements IAggregateReader {
 
   @Override
   public boolean canUseCurrentPageStatistics() throws IOException {
+    if (seriesReader.isMixedGroupSeries()) {
+      return false;
+    }
     Statistics currentPageStatistics = currentPageStatistics();
     if (currentPageStatistics == null) {
       return false;

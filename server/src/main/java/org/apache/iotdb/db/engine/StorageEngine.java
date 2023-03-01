@@ -63,6 +63,7 @@ import org.apache.iotdb.db.qp.physical.PhysicalPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertRowPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertRowsOfOneDevicePlan;
+import org.apache.iotdb.db.qp.physical.crud.InsertRowsPlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertTabletPlan;
 import org.apache.iotdb.db.qp.utils.DateTimeUtils;
 import org.apache.iotdb.db.rescon.SystemInfo;
@@ -814,6 +815,43 @@ public class StorageEngine implements IService {
 
     try {
       virtualStorageGroupProcessor.insert(insertRowPlan);
+    } catch (WriteProcessException e) {
+      throw new StorageEngineException(e);
+    }
+  }
+
+  public void insert(InsertRowsPlan insertRowsPlan)
+      throws StorageEngineException, MetadataException {
+    if (enableMemControl) {
+      try {
+        blockInsertionIfReject(null);
+      } catch (WriteProcessException e) {
+        throw new StorageEngineException(e);
+      }
+    }
+
+    Map<VirtualStorageGroupProcessor, List<InsertRowPlan>> storageGroupProcessorListMap =
+        new HashMap<>();
+    for (InsertRowPlan insertRowPlan : insertRowsPlan.getInsertRowPlanList()) {
+      VirtualStorageGroupProcessor virtualStorageGroupProcessor =
+          getProcessor(insertRowPlan.getDevicePath());
+      getSeriesSchemas(insertRowPlan, virtualStorageGroupProcessor);
+
+      storageGroupProcessorListMap
+          .computeIfAbsent(virtualStorageGroupProcessor, k -> new ArrayList<>())
+          .add(insertRowPlan);
+      try {
+        insertRowPlan.transferType();
+      } catch (QueryProcessException e) {
+        throw new StorageEngineException(e);
+      }
+    }
+
+    try {
+      for (Entry<VirtualStorageGroupProcessor, List<InsertRowPlan>> entry :
+          storageGroupProcessorListMap.entrySet()) {
+        entry.getKey().insert(entry.getValue());
+      }
     } catch (WriteProcessException e) {
       throw new StorageEngineException(e);
     }

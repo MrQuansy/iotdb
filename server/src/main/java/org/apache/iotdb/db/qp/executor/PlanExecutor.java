@@ -1887,20 +1887,31 @@ public class PlanExecutor implements IPlanExecutor {
     }
   }
 
-  @Override
-  public void insert(InsertRowsPlan plan) throws QueryProcessException {
-    for (int i = 0; i < plan.getInsertRowPlanList().size(); i++) {
-      if (plan.getResults().containsKey(i) || plan.isExecuted(i)) {
-        continue;
+  public void insert(InsertRowsPlan insertRowsPlan) throws QueryProcessException {
+    try {
+      for (InsertRowPlan insertRowPlan : insertRowsPlan.getInsertRowPlanList()) {
+        insertRowPlan.setMeasurementMNodes(
+            new IMeasurementMNode[insertRowPlan.getMeasurements().length]);
+        // When insert data with sql statement, the data types will be null here.
+        // We need to predicted the data types first
+        if (insertRowPlan.getDataTypes()[0] == null) {
+          for (int i = 0; i < insertRowPlan.getDataTypes().length; i++) {
+            insertRowPlan.getDataTypes()[i] =
+                TypeInferenceUtils.getPredictedDataType(
+                    insertRowPlan.getValues()[i], insertRowPlan.isNeedInferType());
+          }
+        }
+
+        if (insertRowPlan.getFailedMeasurements() != null) {
+          checkFailedMeasurments(insertRowPlan);
+        }
       }
-      try {
-        insert(plan.getInsertRowPlanList().get(i));
-      } catch (QueryProcessException e) {
-        plan.getResults().put(i, RpcUtils.getStatus(e.getErrorCode(), e.getMessage()));
-      }
-    }
-    if (!plan.getResults().isEmpty()) {
-      throw new BatchProcessException(plan.getFailingStatus());
+
+      StorageEngine.getInstance().insert(insertRowsPlan);
+    } catch (StorageEngineException | MetadataException e) {
+      throw new QueryProcessException(e);
+    } catch (Exception e) {
+      throw e;
     }
   }
 

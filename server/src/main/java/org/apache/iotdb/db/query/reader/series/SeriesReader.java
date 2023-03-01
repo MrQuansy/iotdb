@@ -1492,6 +1492,10 @@ public class SeriesReader {
     return orderUtils;
   }
 
+  public boolean isMixedGroupSeries() {
+    return isMixedGroupSeries;
+  }
+
   @TestOnly
   public Filter getValueFilter() {
     return valueFilter;

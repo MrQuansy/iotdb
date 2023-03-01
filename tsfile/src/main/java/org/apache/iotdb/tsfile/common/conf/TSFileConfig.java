@@ -151,6 +151,8 @@ public class TSFileConfig implements Serializable {
   /** customizedProperties, this should be empty by default. */
   private Properties customizedProperties = new Properties();
 
+  private boolean isNeedStatistic = true;
+
   public TSFileConfig() {}
 
   public int getGroupSizeInByte() {
@@ -423,6 +425,14 @@ public class TSFileConfig implements Serializable {
 
   public void setCustomizedProperties(Properties customizedProperties) {
     this.customizedProperties = customizedProperties;
+  }
+
+  public boolean isNeedStatistic() {
+    return isNeedStatistic;
+  }
+
+  public void setNeedStatistic(boolean needStatistic) {
+    isNeedStatistic = needStatistic;
   }
 
   public int getPatternMatchingThreshold() {

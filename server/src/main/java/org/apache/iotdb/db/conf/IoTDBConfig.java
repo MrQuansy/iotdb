@@ -174,14 +174,14 @@ public class IoTDBConfig {
    * set this parameter to 0 it means call channel.force(true) after every each insert. Unit:
    * millisecond
    */
-  private long forceWalPeriodInMs = 100;
+  private long forceWalPeriodInMs = 10000;
 
   /**
    * The size of the log buffer in each log node (in bytes). Due to the double buffer mechanism, if
    * WAL is enabled and the size of the inserted plan is greater than one-half of this parameter,
    * then the insert plan will be rejected by WAL. Unit: byte
    */
-  private int walBufferSize = 16 * 1024 * 1024;
+  private int walBufferSize = 32 * 1024 * 1024;
 
   private int maxWalBytebufferNumForEachPartition = 6;
 
