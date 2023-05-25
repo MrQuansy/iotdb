@@ -209,14 +209,14 @@ public abstract class InsertNode extends WritePlanNode {
    */
   protected void deserializeMeasurementSchemas(DataInputStream stream) throws IOException {
     for (int i = 0; i < measurements.length; i++) {
-      if (IoTDBDescriptor.getInstance().getConfig().isClusterMode()) {
-        measurementSchemas[i] = MeasurementSchema.deserializeFrom(stream);
-        measurements[i] = measurementSchemas[i].getMeasurementId();
-        dataTypes[i] = measurementSchemas[i].getType();
-      } else {
-        measurements[i] = ReadWriteIOUtils.readString(stream);
-        dataTypes[i] = TSDataType.deserialize(ReadWriteIOUtils.readByte(stream));
-      }
+      //      if (IoTDBDescriptor.getInstance().getConfig().isClusterMode()) {
+      measurementSchemas[i] = MeasurementSchema.deserializeFrom(stream);
+      measurements[i] = measurementSchemas[i].getMeasurementId();
+      dataTypes[i] = measurementSchemas[i].getType();
+      //      } else {
+      //        measurements[i] = ReadWriteIOUtils.readString(stream);
+      //        dataTypes[i] = TSDataType.deserialize(ReadWriteIOUtils.readByte(stream));
+      //      }
     }
   }
 
