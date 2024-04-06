@@ -109,7 +109,7 @@ public abstract class LongTVList extends TVList {
   }
 
   @Override
-  void clearValue() {
+  void clearValue(String devicePath) {
     if (values != null) {
       for (long[] dataArray : values) {
         PrimitiveArrayManager.release(dataArray);

@@ -764,6 +764,8 @@ public class IoTDBConfig {
   /** The default value of primitive array size in array pool */
   private int primitiveArraySize = 64;
 
+  private int blobObjectPooledSize = 45036;
+
   /**
    * Level of TimeIndex, which records the start time and end time of TsFileResource. Currently,
    * DEVICE_TIME_INDEX and FILE_TIME_INDEX are supported, and could not be changed after first set.
@@ -2505,6 +2507,14 @@ public class IoTDBConfig {
 
   public void setPrimitiveArraySize(int primitiveArraySize) {
     this.primitiveArraySize = primitiveArraySize;
+  }
+
+  public int getBlobObjectPooledSize() {
+    return blobObjectPooledSize;
+  }
+
+  public void setBlobObjectPooledSize(int blobObjectPooledSize) {
+    this.blobObjectPooledSize = blobObjectPooledSize;
   }
 
   public int getThriftMaxFrameSize() {

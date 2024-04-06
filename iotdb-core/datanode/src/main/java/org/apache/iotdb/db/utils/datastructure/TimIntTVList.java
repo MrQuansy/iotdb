@@ -123,8 +123,8 @@ public class TimIntTVList extends IntTVList implements TimSort {
   }
 
   @Override
-  public void clear() {
-    super.clear();
+  public void clear(String devicePath) {
+    super.clear(devicePath);
     clearSortedTime();
     clearSortedValue();
   }

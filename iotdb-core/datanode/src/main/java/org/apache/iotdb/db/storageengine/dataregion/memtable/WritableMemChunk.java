@@ -374,9 +374,9 @@ public class WritableMemChunk implements IWritableMemChunk {
   }
 
   @Override
-  public void release() {
+  public void release(String devicePath) {
     if (list.getReferenceCount() == 0) {
-      list.clear();
+      list.clear(devicePath);
     }
   }
 

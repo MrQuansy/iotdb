@@ -38,13 +38,16 @@ import java.util.Set;
 public class AlignedWritableMemChunkGroup implements IWritableMemChunkGroup {
 
   private AlignedWritableMemChunk memChunk;
+  private final String devicePath;
 
-  public AlignedWritableMemChunkGroup(List<IMeasurementSchema> schemaList) {
+  public AlignedWritableMemChunkGroup(List<IMeasurementSchema> schemaList, String devicePath) {
     memChunk = new AlignedWritableMemChunk(schemaList);
+    this.devicePath = devicePath;
   }
 
   private AlignedWritableMemChunkGroup() {
     // Empty constructor
+    devicePath = "";
   }
 
   @Override
@@ -61,7 +64,7 @@ public class AlignedWritableMemChunkGroup implements IWritableMemChunkGroup {
 
   @Override
   public void release() {
-    memChunk.release();
+    memChunk.release(devicePath);
   }
 
   @Override

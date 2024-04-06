@@ -110,7 +110,7 @@ public abstract class BooleanTVList extends TVList {
   }
 
   @Override
-  void clearValue() {
+  void clearValue(String devicePath) {
     if (values != null) {
       for (boolean[] dataArray : values) {
         PrimitiveArrayManager.release(dataArray);

@@ -770,6 +770,11 @@ public class IoTDBDescriptor {
             properties.getProperty(
                 "primitive_array_size", String.valueOf(conf.getPrimitiveArraySize())))));
 
+    conf.setBlobObjectPooledSize(
+        Integer.parseInt(
+            properties.getProperty(
+                "blob_object_pooled_size", String.valueOf(conf.getBlobObjectPooledSize()))));
+
     conf.setThriftMaxFrameSize(
         Integer.parseInt(
             properties.getProperty(

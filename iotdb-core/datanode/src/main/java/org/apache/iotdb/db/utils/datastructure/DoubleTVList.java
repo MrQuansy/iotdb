@@ -110,7 +110,7 @@ public abstract class DoubleTVList extends TVList {
   }
 
   @Override
-  void clearValue() {
+  void clearValue(String devicePath) {
     if (values != null) {
       for (double[] dataArray : values) {
         PrimitiveArrayManager.release(dataArray);

@@ -285,12 +285,12 @@ public abstract class TVList implements WALEntryValue {
     cloneList.maxTime = maxTime;
   }
 
-  public void clear() {
+  public void clear(String devicePath) {
     rowCount = 0;
     sorted = true;
     maxTime = Long.MIN_VALUE;
     clearTime();
-    clearValue();
+    clearValue(devicePath);
   }
 
   protected void clearTime() {
@@ -302,7 +302,7 @@ public abstract class TVList implements WALEntryValue {
     }
   }
 
-  abstract void clearValue();
+  abstract void clearValue(String devicePath);
 
   protected void checkExpansion() {
     if ((rowCount % ARRAY_SIZE) == 0) {

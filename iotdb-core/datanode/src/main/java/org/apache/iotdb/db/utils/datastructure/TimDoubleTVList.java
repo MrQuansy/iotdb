@@ -122,8 +122,8 @@ public class TimDoubleTVList extends DoubleTVList implements TimSort {
   }
 
   @Override
-  public void clear() {
-    super.clear();
+  public void clear(String devicePath) {
+    super.clear(devicePath);
     clearSortedTime();
     clearSortedValue();
   }

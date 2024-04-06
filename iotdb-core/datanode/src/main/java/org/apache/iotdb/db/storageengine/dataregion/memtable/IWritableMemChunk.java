@@ -135,7 +135,7 @@ public interface IWritableMemChunk extends WALEntryValue {
 
   void encode(IChunkWriter chunkWriter);
 
-  void release();
+  void release(String devicePath);
 
   long getFirstPoint();
 

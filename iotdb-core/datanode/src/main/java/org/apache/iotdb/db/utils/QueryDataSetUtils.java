@@ -20,6 +20,8 @@
 package org.apache.iotdb.db.utils;
 
 import org.apache.iotdb.commons.exception.IoTDBException;
+import org.apache.iotdb.commons.memorypool.BlobObjectManager;
+import org.apache.iotdb.commons.memorypool.SingleRegionFixedBlobPool;
 import org.apache.iotdb.db.queryengine.plan.execution.IQueryExecution;
 import org.apache.iotdb.service.rpc.thrift.TSQueryDataSet;
 import org.apache.iotdb.tsfile.exception.write.UnSupportedDataTypeException;
@@ -675,12 +677,12 @@ public class QueryDataSetUtils {
   }
 
   public static Object[] readTabletValuesFromBuffer(
-      ByteBuffer buffer, List<Integer> types, int columns, int size) {
+      ByteBuffer buffer, String devicePath, List<Integer> types, int columns, int size) {
     TSDataType[] dataTypes = new TSDataType[types.size()];
     for (int i = 0; i < dataTypes.length; i++) {
       dataTypes[i] = TSDataType.values()[types.get(i)];
     }
-    return readTabletValuesFromBuffer(buffer, dataTypes, columns, size);
+    return readTabletValuesFromBuffer(buffer, devicePath, dataTypes, columns, size);
   }
 
   /**
@@ -738,6 +740,66 @@ public class QueryDataSetUtils {
           for (int index = 0; index < size; index++) {
             int binarySize = buffer.getInt();
             byte[] binaryValue = new byte[binarySize];
+            buffer.get(binaryValue);
+            binaryValues[index] = new Binary(binaryValue);
+          }
+          values[i] = binaryValues;
+          break;
+        default:
+          throw new UnSupportedDataTypeException(
+              String.format("data type %s is not supported when convert data at client", types[i]));
+      }
+    }
+    return values;
+  }
+
+  @SuppressWarnings("squid:S3776") // Suppress high Cognitive Complexity warning
+  public static Object[] readTabletValuesFromBuffer(
+      ByteBuffer buffer, String devicePath, TSDataType[] types, int columns, int size) {
+    Object[] values = new Object[columns];
+    for (int i = 0; i < columns; i++) {
+      switch (types[i]) {
+        case BOOLEAN:
+          boolean[] boolValues = new boolean[size];
+          for (int index = 0; index < size; index++) {
+            boolValues[index] = BytesUtils.byteToBool(buffer.get());
+          }
+          values[i] = boolValues;
+          break;
+        case INT32:
+          int[] intValues = new int[size];
+          for (int index = 0; index < size; index++) {
+            intValues[index] = buffer.getInt();
+          }
+          values[i] = intValues;
+          break;
+        case INT64:
+          long[] longValues = new long[size];
+          for (int index = 0; index < size; index++) {
+            longValues[index] = buffer.getLong();
+          }
+          values[i] = longValues;
+          break;
+        case FLOAT:
+          float[] floatValues = new float[size];
+          for (int index = 0; index < size; index++) {
+            floatValues[index] = buffer.getFloat();
+          }
+          values[i] = floatValues;
+          break;
+        case DOUBLE:
+          double[] doubleValues = new double[size];
+          for (int index = 0; index < size; index++) {
+            doubleValues[index] = buffer.getDouble();
+          }
+          values[i] = doubleValues;
+          break;
+        case TEXT:
+          Binary[] binaryValues = new Binary[size];
+          SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
+          for (int index = 0; index < size; index++) {
+            int binarySize = buffer.getInt();
+            byte[] binaryValue = pool.allocate(binarySize);
             buffer.get(binaryValue);
             binaryValues[index] = new Binary(binaryValue);
           }

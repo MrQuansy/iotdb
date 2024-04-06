@@ -19,6 +19,8 @@
 
 package org.apache.iotdb.db.utils.datastructure;
 
+import org.apache.iotdb.commons.memorypool.BlobObjectManager;
+import org.apache.iotdb.commons.memorypool.SingleRegionFixedBlobPool;
 import org.apache.iotdb.db.storageengine.dataregion.wal.buffer.IWALByteBufferView;
 import org.apache.iotdb.db.storageengine.dataregion.wal.utils.WALWriteUtils;
 import org.apache.iotdb.db.storageengine.rescon.memory.PrimitiveArrayManager;
@@ -611,7 +613,7 @@ public abstract class AlignedTVList extends TVList {
   }
 
   @Override
-  public void clearValue() {
+  public void clearValue(String devicePath) {
     if (indices != null) {
       for (int[] dataArray : indices) {
         PrimitiveArrayManager.release(dataArray);
@@ -621,8 +623,18 @@ public abstract class AlignedTVList extends TVList {
     for (int i = 0; i < dataTypes.size(); i++) {
       List<Object> columnValues = values.get(i);
       if (columnValues != null) {
-        for (Object dataArray : columnValues) {
-          PrimitiveArrayManager.release(dataArray);
+        if (dataTypes.get(i) == TSDataType.TEXT) {
+          SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
+          for (Object dataArray : columnValues) {
+            Binary[] binaryArray = (Binary[]) dataArray;
+            for (Binary binary : binaryArray) {
+              if (binary != null) {
+                pool.release(binary.getValues());
+                // binary.setValues(null);
+              }
+            }
+            PrimitiveArrayManager.release(dataArray);
+          }
         }
         columnValues.clear();
       }

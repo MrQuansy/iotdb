@@ -320,6 +320,7 @@ public class StatementGenerator {
     insertStatement.setColumns(
         QueryDataSetUtils.readTabletValuesFromBuffer(
             insertTabletReq.values,
+            insertTabletReq.prefixPath,
             insertTabletReq.types,
             insertTabletReq.types.size(),
             insertTabletReq.size));
@@ -357,6 +358,7 @@ public class StatementGenerator {
       insertTabletStatement.setColumns(
           QueryDataSetUtils.readTabletValuesFromBuffer(
               req.valuesList.get(i),
+              req.getPrefixPaths().get(i),
               req.typesList.get(i),
               req.measurementsList.get(i).size(),
               req.sizeList.get(i)));

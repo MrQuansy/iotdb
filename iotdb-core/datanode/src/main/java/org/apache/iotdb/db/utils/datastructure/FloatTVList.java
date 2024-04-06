@@ -110,7 +110,7 @@ public abstract class FloatTVList extends TVList {
   }
 
   @Override
-  void clearValue() {
+  void clearValue(String devicePath) {
     if (values != null) {
       for (float[] dataArray : values) {
         PrimitiveArrayManager.release(dataArray);

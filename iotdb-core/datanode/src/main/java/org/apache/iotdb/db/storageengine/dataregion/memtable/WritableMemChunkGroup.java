@@ -39,8 +39,16 @@ public class WritableMemChunkGroup implements IWritableMemChunkGroup {
 
   private Map<String, IWritableMemChunk> memChunkMap;
 
+  private final String devicePath;
+
   public WritableMemChunkGroup() {
     memChunkMap = new HashMap<>();
+    devicePath = "";
+  }
+
+  public WritableMemChunkGroup(String devicePath) {
+    memChunkMap = new HashMap<>();
+    this.devicePath = devicePath;
   }
 
   @Override
@@ -77,7 +85,7 @@ public class WritableMemChunkGroup implements IWritableMemChunkGroup {
   @Override
   public void release() {
     for (IWritableMemChunk memChunk : memChunkMap.values()) {
-      memChunk.release();
+      memChunk.release(devicePath);
     }
   }
 
@@ -131,7 +139,7 @@ public class WritableMemChunkGroup implements IWritableMemChunkGroup {
         if (startTimestamp == Long.MIN_VALUE && endTimestamp == Long.MAX_VALUE) {
           iter.remove();
           deletedPointsNumber += chunk.count();
-          chunk.release();
+          chunk.release(this.devicePath);
         } else {
           deletedPointsNumber += chunk.delete(startTimestamp, endTimestamp);
           if (chunk.count() == 0) {
@@ -145,7 +153,7 @@ public class WritableMemChunkGroup implements IWritableMemChunkGroup {
         if (startTimestamp == Long.MIN_VALUE && endTimestamp == Long.MAX_VALUE) {
           memChunkMap.remove(targetMeasurement);
           deletedPointsNumber += chunk.count();
-          chunk.release();
+          chunk.release(this.devicePath);
         } else {
           deletedPointsNumber += chunk.delete(startTimestamp, endTimestamp);
           if (chunk.count() == 0) {

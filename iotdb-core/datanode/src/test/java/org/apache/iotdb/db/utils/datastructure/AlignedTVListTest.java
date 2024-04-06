@@ -245,7 +245,7 @@ public class AlignedTVListTest {
     Assert.assertEquals(tvList.memoryBinaryChunkSize[0], 216);
     Assert.assertEquals(tvList.memoryBinaryChunkSize[2], 0);
 
-    tvList.clear();
+    tvList.clear("");
     Assert.assertEquals(tvList.memoryBinaryChunkSize[0], 0);
     Assert.assertEquals(tvList.memoryBinaryChunkSize[2], 0);
   }

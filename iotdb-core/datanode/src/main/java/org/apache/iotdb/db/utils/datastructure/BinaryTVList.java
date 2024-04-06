@@ -18,6 +18,8 @@
  */
 package org.apache.iotdb.db.utils.datastructure;
 
+import org.apache.iotdb.commons.memorypool.BlobObjectManager;
+import org.apache.iotdb.commons.memorypool.SingleRegionFixedBlobPool;
 import org.apache.iotdb.db.storageengine.dataregion.wal.buffer.IWALByteBufferView;
 import org.apache.iotdb.db.storageengine.dataregion.wal.utils.WALWriteUtils;
 import org.apache.iotdb.db.storageengine.rescon.memory.PrimitiveArrayManager;
@@ -151,9 +153,16 @@ public abstract class BinaryTVList extends TVList {
   }
 
   @Override
-  void clearValue() {
+  void clearValue(String devicePath) {
     if (values != null) {
+      SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
       for (Binary[] dataArray : values) {
+        for (Binary binary : dataArray) {
+          if (binary != null) {
+            pool.release(binary.getValues());
+            // binary.setValues(null);
+          }
+        }
         PrimitiveArrayManager.release(dataArray);
       }
       values.clear();

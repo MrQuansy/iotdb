@@ -136,7 +136,7 @@ public class BinaryTVListTest {
     tvList.delete(5, 15);
     Assert.assertEquals(tvList.memoryBinaryChunkSize, 252);
 
-    tvList.clear();
+    tvList.clear("");
     Assert.assertEquals(tvList.memoryBinaryChunkSize, 0);
   }
 }
