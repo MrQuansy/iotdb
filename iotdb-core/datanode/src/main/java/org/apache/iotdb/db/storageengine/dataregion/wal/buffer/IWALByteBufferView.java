@@ -33,6 +33,9 @@ public interface IWALByteBufferView {
   /** Like {@link ByteBuffer#put(byte[])}. */
   void put(byte[] src);
 
+  /** Like {@link ByteBuffer#put(byte[], int, int)}. */
+  void put(byte[] src, int offset, int length);
+
   /** Like {@link ByteBuffer#putChar(char)}. */
   void putChar(char value);
 

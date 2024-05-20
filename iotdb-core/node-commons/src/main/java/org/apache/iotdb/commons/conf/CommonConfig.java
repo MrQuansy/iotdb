@@ -256,6 +256,11 @@ public class CommonConfig {
   // time in nanosecond precision when starting up
   private final long startUpNanosecond = System.nanoTime();
 
+  // Blob allocator configuration
+  private int arenaNum = 4;
+  private int minAllocateSize = 1024;
+  private int maxAllocateSize = 4096;
+
   CommonConfig() {
     // Empty constructor
   }
@@ -1074,5 +1079,29 @@ public class CommonConfig {
 
   public long getStartUpNanosecond() {
     return startUpNanosecond;
+  }
+
+  public int getArenaNum() {
+    return arenaNum;
+  }
+
+  public void setArenaNum(int arenaNum) {
+    this.arenaNum = arenaNum;
+  }
+
+  public int getMinAllocateSize() {
+    return minAllocateSize;
+  }
+
+  public void setMinAllocateSize(int minAllocateSize) {
+    this.minAllocateSize = minAllocateSize;
+  }
+
+  public int getMaxAllocateSize() {
+    return maxAllocateSize;
+  }
+
+  public void setMaxAllocateSize(int maxAllocateSize) {
+    this.maxAllocateSize = maxAllocateSize;
   }
 }

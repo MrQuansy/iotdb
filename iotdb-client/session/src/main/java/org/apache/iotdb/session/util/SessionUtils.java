@@ -106,7 +106,7 @@ public class SessionUtils {
         case TEXT:
           res += Integer.BYTES;
           if (values.get(i) instanceof Binary) {
-            res += ((Binary) values.get(i)).getValues().length;
+            res += ((Binary) values.get(i)).getLength();
           } else {
             res += ((String) values.get(i)).getBytes(TSFileConfig.STRING_CHARSET).length;
           }
@@ -151,14 +151,15 @@ public class SessionUtils {
           ReadWriteIOUtils.write((Double) values.get(i), buffer);
           break;
         case TEXT:
-          byte[] bytes;
           if (values.get(i) instanceof Binary) {
-            bytes = ((Binary) values.get(i)).getValues();
+            Binary binary = ((Binary) values.get(i));
+            ReadWriteIOUtils.write(binary.getLength(), buffer);
+            buffer.put(binary.getValues(), 0, binary.getLength());
           } else {
-            bytes = ((String) values.get(i)).getBytes(TSFileConfig.STRING_CHARSET);
+            byte[] bytes = ((String) values.get(i)).getBytes(TSFileConfig.STRING_CHARSET);
+            ReadWriteIOUtils.write(bytes.length, buffer);
+            buffer.put(bytes);
           }
-          ReadWriteIOUtils.write(bytes.length, buffer);
-          buffer.put(bytes);
           break;
         default:
           throw new IoTDBConnectionException(MSG_UNSUPPORTED_DATA_TYPE + types.get(i));
@@ -240,7 +241,7 @@ public class SessionUtils {
         Binary[] binaryValues = (Binary[]) tablet.values[i];
         for (int index = 0; index < tablet.rowSize; index++) {
           valueBuffer.putInt(binaryValues[index].getLength());
-          valueBuffer.put(binaryValues[index].getValues());
+          valueBuffer.put(binaryValues[index].getValues(), 0, binaryValues[index].getLength());
         }
         break;
       default:

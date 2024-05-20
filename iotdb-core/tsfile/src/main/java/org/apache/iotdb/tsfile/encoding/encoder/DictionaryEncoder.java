@@ -99,7 +99,7 @@ public class DictionaryEncoder extends Encoder {
     ReadWriteForEncodingUtils.writeVarInt(indexEntry.size(), out);
     for (Binary value : indexEntry) {
       ReadWriteForEncodingUtils.writeVarInt(value.getLength(), out);
-      out.write(value.getValues());
+      out.write(value.getValues(), 0, value.getLength());
     }
   }
 

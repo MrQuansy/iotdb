@@ -16,19 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.commons.memorypool;
+package org.apache.iotdb.commons.BlobAllocator;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class SingleRegionFixedBlobPool {
   public LinkedBlockingQueue<byte[]> bufferQueue = new LinkedBlockingQueue<>();
 
+  private final int bufferSize = 65536;
+
   SingleRegionFixedBlobPool() {}
 
   public byte[] allocate(int size) {
     byte[] buffer = bufferQueue.poll();
     if (buffer == null) {
-      buffer = new byte[size];
+      buffer = new byte[bufferSize];
     }
     return buffer;
   }

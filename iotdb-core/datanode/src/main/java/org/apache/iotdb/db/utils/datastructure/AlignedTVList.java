@@ -19,8 +19,7 @@
 
 package org.apache.iotdb.db.utils.datastructure;
 
-import org.apache.iotdb.commons.memorypool.BlobObjectManager;
-import org.apache.iotdb.commons.memorypool.SingleRegionFixedBlobPool;
+import org.apache.iotdb.commons.BlobAllocator.BlobAllocator;
 import org.apache.iotdb.db.storageengine.dataregion.wal.buffer.IWALByteBufferView;
 import org.apache.iotdb.db.storageengine.dataregion.wal.utils.WALWriteUtils;
 import org.apache.iotdb.db.storageengine.rescon.memory.PrimitiveArrayManager;
@@ -624,12 +623,13 @@ public abstract class AlignedTVList extends TVList {
       List<Object> columnValues = values.get(i);
       if (columnValues != null) {
         if (dataTypes.get(i) == TSDataType.TEXT) {
-          SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
+          // SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
           for (Object dataArray : columnValues) {
             Binary[] binaryArray = (Binary[]) dataArray;
             for (Binary binary : binaryArray) {
               if (binary != null) {
-                pool.release(binary.getValues());
+                BlobAllocator.DEFAULT.deallocateBlob(binary.getValues());
+                // pool.release(binary.getValues());
                 // binary.setValues(null);
               }
             }

@@ -21,7 +21,6 @@ package org.apache.iotdb.tsfile.utils;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 /**
  * Override compareTo() and equals() function to Binary class. This class is used to accept Java
@@ -33,14 +32,22 @@ public class Binary implements Comparable<Binary>, Serializable {
   public static final Binary EMPTY_VALUE = new Binary(new byte[0]);
 
   private byte[] values;
+  private int length;
 
   /** if the bytes v is modified, the modification is visible to this binary. */
   public Binary(byte[] v) {
     this.values = v;
+    this.length = v.length;
   }
 
   public Binary(String s, Charset charset) {
     this.values = (s == null) ? null : s.getBytes(charset);
+    this.length = values.length;
+  }
+
+  public Binary(byte[] v, int length) {
+    this.values = v;
+    this.length = length;
   }
 
   @Override
@@ -87,7 +94,12 @@ public class Binary implements Comparable<Binary>, Serializable {
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(values);
+    if (values == null) return 0;
+
+    int result = 1;
+    for (int i = 0; i < length; i++) result = 31 * result + values[i];
+
+    return result;
   }
 
   /**
@@ -99,11 +111,11 @@ public class Binary implements Comparable<Binary>, Serializable {
     if (this.values == null) {
       return -1;
     }
-    return this.values.length;
+    return length;
   }
 
   public String getStringValue(Charset charset) {
-    return new String(this.values, charset);
+    return new String(this.values, 0, length, charset);
   }
 
   @Override
@@ -118,5 +130,10 @@ public class Binary implements Comparable<Binary>, Serializable {
 
   public void setValues(byte[] values) {
     this.values = values;
+    this.length = values.length;
+  }
+
+  public void setLength(int length) {
+    this.length = length;
   }
 }

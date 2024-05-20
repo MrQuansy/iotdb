@@ -19,9 +19,8 @@
 
 package org.apache.iotdb.db.utils;
 
+import org.apache.iotdb.commons.BlobAllocator.BlobAllocator;
 import org.apache.iotdb.commons.exception.IoTDBException;
-import org.apache.iotdb.commons.memorypool.BlobObjectManager;
-import org.apache.iotdb.commons.memorypool.SingleRegionFixedBlobPool;
 import org.apache.iotdb.db.queryengine.plan.execution.IQueryExecution;
 import org.apache.iotdb.service.rpc.thrift.TSQueryDataSet;
 import org.apache.iotdb.tsfile.exception.write.UnSupportedDataTypeException;
@@ -236,7 +235,7 @@ public class QueryDataSetUtils {
                 bitmaps[k] = (bitmaps[k] << 1) | FLAG;
                 Binary binary = column.getBinary(i);
                 dataOutputStream.writeInt(binary.getLength());
-                dataOutputStream.write(binary.getValues());
+                dataOutputStream.write(binary.getValues(), 0, binary.getLength());
                 valueOccupation[k] = valueOccupation[k] + 4 + binary.getLength();
               }
               if (rowCount != 0 && rowCount % 8 == 0) {
@@ -530,7 +529,7 @@ public class QueryDataSetUtils {
         bitmaps[columnIndex] = (bitmaps[columnIndex] << 1) | FLAG;
         Binary binary = column.getBinary(i);
         dataOutputStream.writeInt(binary.getLength());
-        dataOutputStream.write(binary.getValues());
+        dataOutputStream.write(binary.getValues(), 0, binary.getLength());
         valueOccupation[columnIndex] = valueOccupation[columnIndex] + 4 + binary.getLength();
       }
       if (rowCount != 0 && rowCount % 8 == 0) {
@@ -796,12 +795,14 @@ public class QueryDataSetUtils {
           break;
         case TEXT:
           Binary[] binaryValues = new Binary[size];
-          SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
+          // SingleRegionFixedBlobPool pool = BlobObjectManager.getInstance().getPool(devicePath);
           for (int index = 0; index < size; index++) {
             int binarySize = buffer.getInt();
-            byte[] binaryValue = pool.allocate(binarySize);
-            buffer.get(binaryValue);
-            binaryValues[index] = new Binary(binaryValue);
+            // byte[] binaryValue = pool.allocate(binarySize);
+            byte[] binaryValue = BlobAllocator.DEFAULT.allocateBlob(binarySize);
+            // byte[] binaryValue = new byte[binarySize];
+            buffer.get(binaryValue, 0, binarySize);
+            binaryValues[index] = new Binary(binaryValue, binarySize);
           }
           values[i] = binaryValues;
           break;

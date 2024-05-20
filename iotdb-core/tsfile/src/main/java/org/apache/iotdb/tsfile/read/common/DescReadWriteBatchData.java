@@ -438,7 +438,7 @@ public class DescReadWriteBatchData extends DescReadBatchData {
           outputStream.writeLong(getTimeByIndex(i));
           Binary binary = getBinaryByIndex(i);
           outputStream.writeInt(binary.getLength());
-          outputStream.write(binary.getValues());
+          outputStream.write(binary.getValues(), 0, binary.getLength());
         }
         break;
       case INT64:
@@ -477,7 +477,7 @@ public class DescReadWriteBatchData extends DescReadBatchData {
                 case TEXT:
                   Binary binary = value.getBinary();
                   outputStream.writeInt(binary.getLength());
-                  outputStream.write(binary.getValues());
+                  outputStream.write(binary.getValues(), 0, binary.getLength());
                   break;
                 case INT64:
                   outputStream.writeLong(value.getLong());

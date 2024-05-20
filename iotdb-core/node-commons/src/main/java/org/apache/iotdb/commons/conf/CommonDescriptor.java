@@ -238,6 +238,20 @@ public class CommonDescriptor {
             properties.getProperty(
                 "cluster_device_limit_threshold",
                 String.valueOf(config.getDeviceLimitThreshold()))));
+
+    config.setArenaNum(
+        Integer.parseInt(
+            properties.getProperty("arena_num", String.valueOf(config.getArenaNum()))));
+
+    config.setMinAllocateSize(
+        Integer.parseInt(
+            properties.getProperty(
+                "min_allocate_size", String.valueOf(config.getMinAllocateSize()))));
+
+    config.setMaxAllocateSize(
+        Integer.parseInt(
+            properties.getProperty(
+                "max_allocate_size", String.valueOf(config.getMaxAllocateSize()))));
   }
 
   private void loadPipeProps(Properties properties) {

@@ -402,6 +402,23 @@ public class WALBuffer extends AbstractWALBuffer {
     }
 
     @Override
+    public void put(byte[] src, int offset, int length) {
+      while (true) {
+        int leftCapacity = workingBuffer.remaining();
+        int needCapacity = length;
+        if (leftCapacity >= needCapacity) {
+          workingBuffer.put(src, offset, needCapacity);
+          break;
+        } else {
+          workingBuffer.put(src, offset, leftCapacity);
+          offset += leftCapacity;
+          length -= leftCapacity;
+          rollBuffer();
+        }
+      }
+    }
+
+    @Override
     public void putChar(char value) {
       ensureEnoughSpace(Character.BYTES);
       workingBuffer.putChar(value);

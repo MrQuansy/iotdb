@@ -224,7 +224,10 @@ public class SerializeUtils {
       dataOutputStream.writeLong(timeValuePair.getTimestamp());
       if (timeValuePair.getTimestamp() != Long.MIN_VALUE) {
         dataOutputStream.writeInt(timeValuePair.getValue().getBinary().getLength());
-        dataOutputStream.write(timeValuePair.getValue().getBinary().getValues());
+        dataOutputStream.write(
+            timeValuePair.getValue().getBinary().getValues(),
+            0,
+            timeValuePair.getValue().getBinary().getLength());
       }
     }
   }
@@ -325,7 +328,10 @@ public class SerializeUtils {
           dataOutputStream.writeLong(timeValuePair.getTimestamp());
           if (timeValuePair.getTimestamp() != Long.MIN_VALUE) {
             dataOutputStream.writeInt(timeValuePair.getValue().getBinary().getLength());
-            dataOutputStream.write(timeValuePair.getValue().getBinary().getValues());
+            dataOutputStream.write(
+                timeValuePair.getValue().getBinary().getValues(),
+                0,
+                timeValuePair.getValue().getBinary().getLength());
           }
           break;
         case BOOLEAN:

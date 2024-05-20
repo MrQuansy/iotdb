@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 
 public class PlainEncoder extends Encoder {
@@ -92,8 +91,8 @@ public class PlainEncoder extends Encoder {
       // write the length of the bytes
       encode(value.getLength(), out);
       // write value
-      out.write(value.getValues());
-    } catch (IOException e) {
+      out.write(value.getValues(), 0, value.getLength());
+    } catch (IndexOutOfBoundsException e) {
       logger.error(
           "tsfile-encoding PlainEncoder: error occurs when encode Binary value {}", value, e);
     }

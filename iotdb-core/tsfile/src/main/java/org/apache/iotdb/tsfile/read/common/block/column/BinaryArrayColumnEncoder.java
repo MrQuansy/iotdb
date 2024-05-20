@@ -82,7 +82,7 @@ public class BinaryArrayColumnEncoder implements ColumnEncoder {
         if (!column.isNull(i)) {
           Binary binary = column.getBinary(i);
           output.writeInt(binary.getLength());
-          output.write(binary.getValues());
+          output.write(binary.getValues(), 0, binary.getLength());
         }
       }
     } else {

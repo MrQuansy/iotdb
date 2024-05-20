@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.commons.memorypool;
+package org.apache.iotdb.commons.BlobAllocator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

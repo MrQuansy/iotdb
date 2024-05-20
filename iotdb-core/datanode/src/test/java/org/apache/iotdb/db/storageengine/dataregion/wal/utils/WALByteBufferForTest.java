@@ -40,6 +40,11 @@ public class WALByteBufferForTest implements IWALByteBufferView {
   }
 
   @Override
+  public void put(byte[] src, int offset, int length) {
+    buffer.put(src, offset, length);
+  }
+
+  @Override
   public void putChar(char value) {
     buffer.putChar(value);
   }
