@@ -34,6 +34,9 @@ public class PoolArena {
   private Evictor evictor;
   AtomicInteger numRegisterThread = new AtomicInteger(0);
 
+  private int sampleCount;
+  private final int EVICT_SAMPLE_COUNT = 100;
+
   private final Duration evictorShutdownTimeoutDuration =
       AllocatorConfig.DEFAULT_EVICTOR_SHUTDOWN_TIMEOUT;
   private final Duration durationBetweenEvictionRuns =
@@ -48,6 +51,7 @@ public class PoolArena {
       regions[i] = new MemoryRegion(sizeClasses.sizeIdx2size(i));
     }
 
+    sampleCount = 0;
     startEvictor(durationBetweenEvictionRuns);
   }
 
@@ -117,6 +121,20 @@ public class PoolArena {
     @Override
     public void run() {
       LOGGER.info("Arena-{} running evictor", arenaID);
+
+      // Start sampling
+      for (MemoryRegion region : regions) {
+        region.updateSample();
+      }
+
+      sampleCount++;
+      if (sampleCount == EVICT_SAMPLE_COUNT) {
+        // Evict
+        for (MemoryRegion region : regions) {
+          region.resize();
+        }
+        sampleCount = 0;
+      }
     }
 
     /**

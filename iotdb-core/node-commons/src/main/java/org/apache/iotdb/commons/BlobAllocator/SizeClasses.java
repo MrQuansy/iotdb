@@ -19,7 +19,7 @@
 
 package org.apache.iotdb.commons.BlobAllocator;
 
-public final class SizeClasses {
+final class SizeClasses {
   // lookup table for sizeIdx <= smallMaxSizeIdx
   private int[] sizeIdx2sizeTab;
   //    private int[] size2idxTab;

@@ -72,4 +72,6 @@ public class AllocatorConfig {
    */
   public static final Duration DEFAULT_DURATION_BETWEEN_EVICTION_RUNS =
       Duration.ofMillis(DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS);
+
+  public static final int ARENA_PREDICTION_WEIGHT = 35;
 }

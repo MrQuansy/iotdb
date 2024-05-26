@@ -21,43 +21,20 @@ package org.apache.iotdb.commons.BlobAllocator;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MemoryRegion {
   private final int size;
   private final Queue<byte[]> queue;
-  private AtomicLong allocations;
+  private AtomicInteger allocations;
+  AdaptiveWeightedAverage average;
 
   MemoryRegion(int size) {
     this.size = size;
-    //        this.size = MathUtil.safeFindNextPositivePowerOfTwo(size);
-    //        queue = PlatformDependent.newFixedMpscQueue();
+    this.average = new AdaptiveWeightedAverage(AllocatorConfig.ARENA_PREDICTION_WEIGHT);
     queue = new LinkedBlockingQueue<>();
-    allocations = new AtomicLong(0);
+    allocations = new AtomicInteger(0);
   }
-
-  //    /**
-  //     * Init the {@link PooledByteBuf} using the provided chunk and handle with the capacity
-  // restrictions.
-  //     */
-  //    protected abstract void initBuf(PoolChunk<T> chunk, ByteBuffer nioBuffer, long handle,
-  //                                    PooledByteBuf<T> buf, int reqCapacity, PoolThreadCache
-  // threadCache);
-
-  /** Add to cache if not already full. */
-  //    @SuppressWarnings("unchecked")
-  //    public final boolean add(PoolChunk<T> chunk, ByteBuffer nioBuffer, long handle, int
-  // normCapacity) {
-  //        PoolThreadCache.MemoryRegionCache.Entry<T> entry = newEntry(chunk, nioBuffer, handle,
-  // normCapacity);
-  //        boolean queued = queue.offer(entry);
-  //        if (!queued) {
-  //            // If it was not possible to cache the chunk, immediately recycle the entry
-  //            entry.unguardedRecycle();
-  //        }
-  //
-  //        return queued;
-  //    }
 
   /** Allocate something out of the cache if possible and remove the entry from the cache. */
   public final byte[] allocate() {
@@ -72,5 +49,17 @@ public class MemoryRegion {
   public void deallocate(byte[] bytes) {
     allocations.decrementAndGet();
     queue.add(bytes);
+  }
+
+  public void updateSample() {
+    average.sample(allocations.get() + queue.size());
+  }
+
+  public void resize() {
+    int remain = (int) Math.ceil(average.average()) - allocations.get();
+    while (remain > 0 && !queue.isEmpty()) {
+      queue.poll();
+      remain--;
+    }
   }
 }
