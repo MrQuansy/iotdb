@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 import static org.apache.iotdb.db.queryengine.transformation.dag.column.unary.scalar.RTrimColumnTransformer.rtrim;
 
@@ -45,9 +46,17 @@ public class RTrim2ColumnTransformer extends BinaryColumnTransformer {
       Column leftColumn, Column rightColumn, ColumnBuilder columnBuilder, int positionCount) {
     for (int i = 0; i < positionCount; i++) {
       if (!leftColumn.isNull(i) && !rightColumn.isNull(i)) {
-        byte[] leftValue = leftColumn.getBinary(i).getValues();
-        byte[] rightValue = rightColumn.getBinary(i).getValues();
-        columnBuilder.writeBinary(new Binary(rtrim(leftValue, rightValue)));
+        Pair<byte[], Integer> leftValuePair = leftColumn.getBinary(i).getValuesAndLength();
+        Pair<byte[], Integer> rightValuePair = rightColumn.getBinary(i).getValuesAndLength();
+        columnBuilder.writeBinary(
+            new Binary(
+                rtrim(
+                    leftValuePair.left,
+                    0,
+                    leftValuePair.right,
+                    rightValuePair.left,
+                    0,
+                    rightValuePair.right)));
       } else {
         columnBuilder.appendNull();
       }
@@ -63,9 +72,17 @@ public class RTrim2ColumnTransformer extends BinaryColumnTransformer {
       boolean[] selection) {
     for (int i = 0; i < positionCount; i++) {
       if (selection[i] && !leftColumn.isNull(i) && !rightColumn.isNull(i)) {
-        byte[] leftValue = leftColumn.getBinary(i).getValues();
-        byte[] rightValue = rightColumn.getBinary(i).getValues();
-        builder.writeBinary(new Binary(rtrim(leftValue, rightValue)));
+        Pair<byte[], Integer> leftValuePair = leftColumn.getBinary(i).getValuesAndLength();
+        Pair<byte[], Integer> rightValuePair = rightColumn.getBinary(i).getValuesAndLength();
+        builder.writeBinary(
+            new Binary(
+                rtrim(
+                    leftValuePair.left,
+                    0,
+                    leftValuePair.right,
+                    rightValuePair.left,
+                    0,
+                    rightValuePair.right)));
       } else {
         builder.appendNull();
       }

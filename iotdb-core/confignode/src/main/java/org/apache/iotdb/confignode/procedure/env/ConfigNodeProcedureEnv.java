@@ -83,6 +83,7 @@ import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.apache.thrift.TException;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -527,7 +528,7 @@ public class ConfigNodeProcedureEnv {
     final TCreateTriggerInstanceReq request =
         new TCreateTriggerInstanceReq(triggerInformation.serialize());
     if (jarFile != null) {
-      request.setJarFile(ByteBuffer.wrap(jarFile.getValues()));
+      request.setJarFile(BinaryUtils.wrapToByteBuffer(jarFile));
     }
 
     DataNodeAsyncRequestContext<TCreateTriggerInstanceReq, TSStatus> clientHandler =

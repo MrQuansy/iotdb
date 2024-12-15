@@ -343,7 +343,7 @@ public class IoTDBJDBCResultSet implements ResultSet {
 
       if (dataType.equals(TSDataType.BLOB)) {
         Binary binary = ioTDBRpcDataSet.getBinary(columnIndex);
-        return binary == null ? null : binary.getValues();
+        return binary == null ? null : binary.getValuesAndLength().left;
       } else {
         String s = ioTDBRpcDataSet.getString(columnIndex);
         return s == null ? null : s.getBytes(charset);
@@ -363,7 +363,7 @@ public class IoTDBJDBCResultSet implements ResultSet {
 
       if (dataType.equals(TSDataType.BLOB)) {
         Binary binary = ioTDBRpcDataSet.getBinary(columnName);
-        return binary == null ? null : binary.getValues();
+        return binary == null ? null : binary.getValuesAndLength().left;
       } else {
         String s = ioTDBRpcDataSet.getString(columnName);
         return s == null ? null : s.getBytes(charset);

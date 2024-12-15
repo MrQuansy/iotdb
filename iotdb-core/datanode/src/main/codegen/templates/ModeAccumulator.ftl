@@ -33,6 +33,7 @@ import org.apache.tsfile.file.metadata.statistics.Statistics;
 import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BitMap;
 import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
@@ -166,7 +167,7 @@ public class ${className} implements Accumulator {
   }
 
   private void deserializeAndMergeCountMap(Binary partialResult) {
-    InputStream stream = new ByteArrayInputStream(partialResult.getValues());
+    InputStream stream = BinaryUtils.wrapToByteStream(partialResult);
     try {
       int size = ReadWriteIOUtils.readInt(stream);
       for (int i = 0; i < size; i++) {

@@ -22,6 +22,7 @@ package org.apache.iotdb.confignode.consensus.request.write.pipe.payload;
 import org.apache.iotdb.confignode.consensus.request.ConfigPhysicalPlan;
 import org.apache.iotdb.confignode.consensus.request.ConfigPhysicalPlanType;
 
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 
 import java.io.DataOutputStream;
@@ -55,7 +56,7 @@ public class PipeDeleteTimeSeriesPlan extends ConfigPhysicalPlan {
 
   @Override
   protected void deserializeImpl(final ByteBuffer buffer) throws IOException {
-    patternTreeBytes = ByteBuffer.wrap(ReadWriteIOUtils.readBinary(buffer).getValues());
+    patternTreeBytes = BinaryUtils.wrapToByteBuffer(ReadWriteIOUtils.readBinary(buffer));
   }
 
   @Override

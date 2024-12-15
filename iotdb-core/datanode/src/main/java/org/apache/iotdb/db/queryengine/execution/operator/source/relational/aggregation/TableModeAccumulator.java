@@ -143,7 +143,7 @@ public class TableModeAccumulator implements TableAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       deserializeAndMergeCountMap(bytes);
     }
   }
@@ -374,9 +374,7 @@ public class TableModeAccumulator implements TableAccumulator {
                 [offset
                     + 4
                     + (8 + 4) * binaryCountMap.size()
-                    + binaryCountMap.keySet().stream()
-                        .mapToInt(key -> key.getValues().length)
-                        .sum()];
+                    + binaryCountMap.keySet().stream().mapToInt(key -> key.getLength()).sum()];
         BytesUtils.boolToBytes(nullCount != 0, bytes, 0);
         if (nullCount != 0) {
           BytesUtils.longToBytes(nullCount, bytes, 1);

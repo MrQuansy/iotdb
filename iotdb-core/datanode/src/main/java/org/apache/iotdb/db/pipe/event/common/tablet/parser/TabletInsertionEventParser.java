@@ -568,12 +568,12 @@ public abstract class TabletInsertionEventParser {
           final Binary[] valueColumns = new Binary[rowIndexList.size()];
           for (int i = 0; i < rowIndexList.size(); ++i) {
             if (Objects.isNull(binaryValueColumns[rowIndexList.get(i)])
-                || Objects.isNull(binaryValueColumns[rowIndexList.get(i)].getValues())
+                || binaryValueColumns[rowIndexList.get(i)].isNull()
                 || originNullValueColumnBitmap.isMarked(rowIndexList.get(i))) {
               valueColumns[i] = Binary.EMPTY_VALUE;
               nullValueColumnBitmap.mark(i);
             } else {
-              valueColumns[i] = new Binary(binaryValueColumns[rowIndexList.get(i)].getValues());
+              valueColumns[i] = binaryValueColumns[rowIndexList.get(i)];
             }
           }
           return valueColumns;

@@ -86,7 +86,7 @@ public class VarianceAccumulator implements Accumulator {
     if (partialResult[0].isNull(0)) {
       return;
     }
-    byte[] bytes = partialResult[0].getBinary(0).getValues();
+    byte[] bytes = partialResult[0].getBinary(0).getValuesAndLength().left;
     long intermediateCount = BytesUtils.bytesToLong(bytes, Long.BYTES);
     double intermediateMean = BytesUtils.bytesToDouble(bytes, Long.BYTES);
     double intermediateM2 = BytesUtils.bytesToDouble(bytes, (Long.BYTES + Double.BYTES));
@@ -107,7 +107,7 @@ public class VarianceAccumulator implements Accumulator {
       return;
     }
     // Deserialize
-    byte[] bytes = input[0].getBinary(0).getValues();
+    byte[] bytes = input[0].getBinary(0).getValuesAndLength().left;
     long intermediateCount = BytesUtils.bytesToLong(bytes, Long.BYTES);
     double intermediateMean = BytesUtils.bytesToDouble(bytes, Long.BYTES);
     double intermediateM2 = BytesUtils.bytesToDouble(bytes, (Long.BYTES + Double.BYTES));

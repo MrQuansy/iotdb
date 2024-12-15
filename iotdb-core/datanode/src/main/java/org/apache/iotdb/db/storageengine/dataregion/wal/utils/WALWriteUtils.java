@@ -85,7 +85,8 @@ public class WALWriteUtils {
    */
   public static int write(Binary n, IWALByteBufferView buffer) {
     buffer.putInt(n.getLength());
-    buffer.put(n.getValues());
+
+    buffer.put(n.getValuesAndLength().left, 0, n.getLength());
     return INT_LEN + n.getLength();
   }
 

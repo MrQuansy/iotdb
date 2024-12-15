@@ -25,6 +25,7 @@ import org.apache.iotdb.db.queryengine.transformation.dag.column.binary.BinaryCo
 import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
+import org.apache.tsfile.utils.Pair;
 
 import static org.apache.iotdb.db.queryengine.transformation.dag.column.unary.scalar.StartsWithColumnTransformer.equalCompare;
 
@@ -44,9 +45,15 @@ public class StartsWith2ColumnTransformer extends BinaryColumnTransformer {
       Column leftColumn, Column rightColumn, ColumnBuilder columnBuilder, int positionCount) {
     for (int i = 0; i < positionCount; i++) {
       if (!leftColumn.isNull(i) && !rightColumn.isNull(i)) {
-        byte[] leftBytes = leftColumn.getBinary(i).getValues();
-        byte[] rightBytes = rightColumn.getBinary(i).getValues();
-        columnBuilder.writeBoolean(equalCompare(leftBytes, rightBytes, 0));
+        Pair<byte[], Integer> leftBinaryPair = leftColumn.getBinary(i).getValuesAndLength();
+        Pair<byte[], Integer> rightBinaryPair = rightColumn.getBinary(i).getValuesAndLength();
+        columnBuilder.writeBoolean(
+            equalCompare(
+                leftBinaryPair.left,
+                leftBinaryPair.right,
+                rightBinaryPair.left,
+                rightBinaryPair.right,
+                0));
       } else {
         columnBuilder.appendNull();
       }
@@ -62,9 +69,15 @@ public class StartsWith2ColumnTransformer extends BinaryColumnTransformer {
       boolean[] selection) {
     for (int i = 0; i < positionCount; i++) {
       if (selection[i] && !leftColumn.isNull(i) && !rightColumn.isNull(i)) {
-        byte[] leftBytes = leftColumn.getBinary(i).getValues();
-        byte[] rightBytes = rightColumn.getBinary(i).getValues();
-        builder.writeBoolean(equalCompare(leftBytes, rightBytes, 0));
+        Pair<byte[], Integer> leftBinaryPair = leftColumn.getBinary(i).getValuesAndLength();
+        Pair<byte[], Integer> rightBinaryPair = rightColumn.getBinary(i).getValuesAndLength();
+        builder.writeBoolean(
+            equalCompare(
+                leftBinaryPair.left,
+                leftBinaryPair.right,
+                rightBinaryPair.left,
+                rightBinaryPair.right,
+                0));
       } else {
         builder.appendNull();
       }

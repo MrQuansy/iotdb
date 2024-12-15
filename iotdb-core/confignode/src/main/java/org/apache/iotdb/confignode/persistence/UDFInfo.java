@@ -39,6 +39,7 @@ import org.apache.iotdb.consensus.common.DataSet;
 import org.apache.iotdb.rpc.TSStatusCode;
 import org.apache.iotdb.udf.api.exception.UDFManagementException;
 
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +131,7 @@ public class UDFInfo implements SnapshotProcessor {
         existedJarToMD5.put(udfInformation.getJarName(), udfInformation.getJarMD5());
         if (physicalPlan.getJarFile() != null) {
           udfExecutableManager.saveToInstallDir(
-              ByteBuffer.wrap(physicalPlan.getJarFile().getValues()), udfInformation.getJarName());
+              BinaryUtils.wrapToByteBuffer(physicalPlan.getJarFile()), udfInformation.getJarName());
         }
       }
       return new TSStatus(TSStatusCode.SUCCESS_STATUS.getStatusCode());

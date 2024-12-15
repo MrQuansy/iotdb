@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 import static org.apache.iotdb.db.queryengine.transformation.dag.column.unary.scalar.ConcatColumnTransformer.concat;
 
@@ -67,9 +68,15 @@ public class Concat2ColumnTransformer extends BinaryColumnTransformer {
 
   private void transform(Column leftColumn, Column rightColumn, ColumnBuilder builder, int i) {
     if (!leftColumn.isNull(i) && !rightColumn.isNull(i)) {
+      Pair<byte[], Integer> leftBinaryPair = leftColumn.getBinary(i).getValuesAndLength();
+      Pair<byte[], Integer> rightBinaryPair = rightColumn.getBinary(i).getValuesAndLength();
       builder.writeBinary(
           new Binary(
-              concat(leftColumn.getBinary(i).getValues(), rightColumn.getBinary(i).getValues())));
+              concat(
+                  leftBinaryPair.left,
+                  leftBinaryPair.right,
+                  rightBinaryPair.left,
+                  rightBinaryPair.right)));
     } else if (!leftColumn.isNull(i)) {
       builder.writeBinary(leftColumn.getBinary(i));
     } else if (!rightColumn.isNull(i)) {

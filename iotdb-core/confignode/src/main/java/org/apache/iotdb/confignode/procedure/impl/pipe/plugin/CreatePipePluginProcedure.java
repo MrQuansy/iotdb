@@ -308,7 +308,7 @@ public class CreatePipePluginProcedure extends AbstractNodeProcedure<CreatePipeP
   public void deserialize(ByteBuffer byteBuffer) {
     super.deserialize(byteBuffer);
     pipePluginMeta = PipePluginMeta.deserialize(byteBuffer);
-    jarFile = ReadWriteIOUtils.readBinary(byteBuffer).getValues();
+    jarFile = ReadWriteIOUtils.readBinary(byteBuffer).getValuesAndLength().left;
   }
 
   @Override

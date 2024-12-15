@@ -58,7 +58,7 @@ public class BinaryAllocatorTest {
     assertNotNull(binary);
     assertEquals(binary.getArenaIndex(), 0);
     assertEquals(binary.getLength(), 65535);
-    assertEquals(binary.getValues().length, 65536);
+    assertEquals(binary.getCapacity(), 65536);
     binaryAllocator.deallocateBinary(binary);
   }
 

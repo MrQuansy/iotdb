@@ -51,9 +51,7 @@ public class PatternState implements State {
   }
 
   @Override
-  public void deserialize(byte[] bytes) {
-    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-
+  public void deserialize(ByteBuffer byteBuffer) {
     int size = byteBuffer.getInt();
     for (int i = 0; i < size; i++) {
       updateBuffer(byteBuffer.getLong(), byteBuffer.getDouble());

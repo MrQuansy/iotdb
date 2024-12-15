@@ -34,6 +34,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
 import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
 
@@ -250,7 +251,7 @@ public class GroupedFirstByAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       long curTime = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, 0);
       int offset = Long.BYTES;
       boolean isXNull = BytesUtils.bytesToBool(bytes, offset);
@@ -343,9 +344,9 @@ public class GroupedFirstByAccumulator implements GroupedAccumulator {
         case TEXT:
         case BLOB:
         case STRING:
-          byte[] values = xBinaryValues.get(groupId).getValues();
-          intToBytes(values.length, bytes, Long.BYTES + 1);
-          System.arraycopy(values, 0, bytes, length - values.length, values.length);
+          Pair<byte[], Integer> values = xBinaryValues.get(groupId).getValuesAndLength();
+          intToBytes(values.right, bytes, Long.BYTES + 1);
+          System.arraycopy(values.left, 0, bytes, length - values.right, values.right);
           return bytes;
         case BOOLEAN:
           boolToBytes(xBooleanValues.get(groupId), bytes, Long.BYTES + 1);
@@ -373,7 +374,7 @@ public class GroupedFirstByAccumulator implements GroupedAccumulator {
       case TEXT:
       case BLOB:
       case STRING:
-        return Integer.BYTES + xBinaryValues.get(groupId).getValues().length;
+        return Integer.BYTES + xBinaryValues.get(groupId).getLength();
       case BOOLEAN:
         return 1;
       default:

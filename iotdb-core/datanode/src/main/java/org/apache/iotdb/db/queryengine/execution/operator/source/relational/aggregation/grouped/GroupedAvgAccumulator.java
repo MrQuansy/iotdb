@@ -96,7 +96,7 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
 
     for (int i = 0; i < groupIds.length; i++) {
       if (!argument.isNull(i)) {
-        deserialize(groupIds[i], argument.getBinary(i).getValues());
+        deserialize(groupIds[i], argument.getBinary(i).getValuesAndLength().left);
       }
     }
   }

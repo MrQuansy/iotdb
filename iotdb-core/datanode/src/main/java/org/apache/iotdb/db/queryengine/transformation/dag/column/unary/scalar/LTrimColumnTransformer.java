@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 import static org.apache.iotdb.db.queryengine.transformation.dag.column.unary.scalar.TrimColumnTransformer.isContain;
 
@@ -42,8 +43,16 @@ public class LTrimColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (!column.isNull(i)) {
-        byte[] currentValue = column.getBinary(i).getValues();
-        columnBuilder.writeBinary(new Binary(ltrim(currentValue, character)));
+        Pair<byte[], Integer> currentValuePair = column.getBinary(i).getValuesAndLength();
+        columnBuilder.writeBinary(
+            new Binary(
+                ltrim(
+                    currentValuePair.left,
+                    0,
+                    currentValuePair.right,
+                    character,
+                    0,
+                    character.length)));
       } else {
         columnBuilder.appendNull();
       }
@@ -54,8 +63,16 @@ public class LTrimColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder, boolean[] selection) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (selection[i] && !column.isNull(i)) {
-        byte[] currentValue = column.getBinary(i).getValues();
-        columnBuilder.writeBinary(new Binary(ltrim(currentValue, character)));
+        Pair<byte[], Integer> currentValuePair = column.getBinary(i).getValuesAndLength();
+        columnBuilder.writeBinary(
+            new Binary(
+                ltrim(
+                    currentValuePair.left,
+                    0,
+                    currentValuePair.right,
+                    character,
+                    0,
+                    character.length)));
       } else {
         columnBuilder.appendNull();
       }
@@ -76,6 +93,25 @@ public class LTrimColumnTransformer extends UnaryColumnTransformer {
     } else {
       byte[] result = new byte[source.length - start];
       System.arraycopy(source, start, result, 0, source.length - start);
+      return result;
+    }
+  }
+
+  public static byte[] ltrim(
+      byte[] source, int aOffset, int aLength, byte[] character, int bOffset, int bLength) {
+    if (aLength == 0 || bLength == 0) {
+      return source;
+    }
+    int start = aOffset;
+
+    while (start < aLength + aOffset && isContain(character, bOffset, bLength, source[start])) {
+      start++;
+    }
+    if (start >= aLength + aOffset) {
+      return new byte[0];
+    } else {
+      byte[] result = new byte[source.length - start];
+      System.arraycopy(source, start, result, 0, aLength + aOffset - start);
       return result;
     }
   }

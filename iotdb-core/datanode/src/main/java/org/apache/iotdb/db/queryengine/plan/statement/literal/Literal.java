@@ -54,7 +54,7 @@ public abstract class Literal extends StatementNode {
       case NULL:
         return new NullLiteral();
       case BINARY:
-        return new BinaryLiteral(ReadWriteIOUtils.readBinary(byteBuffer).getValues());
+        return new BinaryLiteral(ReadWriteIOUtils.readBinary(byteBuffer).getValuesAndLength().left);
       default:
         throw new IllegalArgumentException(String.format("Unknown literal type: %s", type));
     }

@@ -35,6 +35,7 @@ import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.file.metadata.statistics.Statistics;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BitMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +135,7 @@ public class UDAFAccumulator implements Accumulator {
 
     State otherState = udaf.createState();
     Binary otherStateBinary = partialResult[0].getBinary(0);
-    otherState.deserialize(otherStateBinary.getValues());
+    otherState.deserialize(BinaryUtils.wrapToByteBuffer(otherStateBinary));
 
     udaf.combineState(state, otherState);
   }
@@ -173,7 +174,7 @@ public class UDAFAccumulator implements Accumulator {
 
     State removedState = udaf.createState();
     Binary removedStateBinary = partialResult[0].getBinary(0);
-    removedState.deserialize(removedStateBinary.getValues());
+    removedState.deserialize(BinaryUtils.wrapToByteBuffer(removedStateBinary));
 
     udaf.removeState(state, removedState);
   }

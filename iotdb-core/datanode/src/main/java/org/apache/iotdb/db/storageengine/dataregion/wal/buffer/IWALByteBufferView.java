@@ -34,6 +34,9 @@ public abstract class IWALByteBufferView extends OutputStream {
   /** Like {@link ByteBuffer#put(byte[])}. */
   public abstract void put(byte[] src);
 
+  /** Like {@link ByteBuffer#put(byte[], int offset, int length)}. */
+  public abstract void put(byte[] src, int offset, int length);
+
   /** Like {@link ByteBuffer#putChar(char)}. */
   public abstract void putChar(char value);
 

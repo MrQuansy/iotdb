@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 public class TrimColumnTransformer extends UnaryColumnTransformer {
 
@@ -41,8 +42,9 @@ public class TrimColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (!column.isNull(i)) {
-        byte[] currentValue = column.getBinary(i).getValues();
-        columnBuilder.writeBinary(new Binary(trim(currentValue, character)));
+        Pair<byte[], Integer> result = column.getBinary(i).getValuesAndLength();
+        columnBuilder.writeBinary(
+            new Binary(trim(result.left, 0, result.right, character, 0, character.length)));
       } else {
         columnBuilder.appendNull();
       }
@@ -53,25 +55,28 @@ public class TrimColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder, boolean[] selection) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (selection[i] && !column.isNull(i)) {
-        byte[] currentValue = column.getBinary(i).getValues();
-        columnBuilder.writeBinary(new Binary(trim(currentValue, character)));
+        Pair<byte[], Integer> currentValue = column.getBinary(i).getValuesAndLength();
+        columnBuilder.writeBinary(
+            new Binary(
+                trim(currentValue.left, 0, currentValue.right, character, 0, character.length)));
       } else {
         columnBuilder.appendNull();
       }
     }
   }
 
-  public static byte[] trim(byte[] source, byte[] character) {
-    if (source.length == 0 || character.length == 0) {
+  public static byte[] trim(
+      byte[] source, int aOffset, int aLength, byte[] character, int bOffset, int bLength) {
+    if (aLength == 0 || bLength == 0) {
       return source;
     }
-    int start = 0;
-    int end = source.length - 1;
+    int start = aOffset;
+    int end = start + aLength - 1;
 
-    while (start <= end && isContain(character, source[start])) {
+    while (start <= end && isContain(character, bOffset, bLength, source[start])) {
       start++;
     }
-    while (start <= end && isContain(character, source[end])) {
+    while (start <= end && isContain(character, bOffset, bLength, source[end])) {
       end--;
     }
     if (start > end) {
@@ -81,6 +86,19 @@ public class TrimColumnTransformer extends UnaryColumnTransformer {
       System.arraycopy(source, start, result, 0, end - start + 1);
       return result;
     }
+  }
+
+  public static byte[] trim(byte[] source, byte[] character) {
+    return trim(source, 0, source.length, character, 0, character.length);
+  }
+
+  public static boolean isContain(byte[] character, int offset, int length, byte target) {
+    for (int i = offset; i < offset + length; i++) {
+      if (character[i] == target) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public static boolean isContain(byte[] character, byte target) {

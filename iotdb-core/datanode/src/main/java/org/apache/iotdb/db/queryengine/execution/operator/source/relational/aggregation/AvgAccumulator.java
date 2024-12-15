@@ -97,8 +97,10 @@ public class AvgAccumulator implements TableAccumulator {
       }
 
       initResult = true;
-      long midCountValue = BytesUtils.bytesToLong(argument.getBinary(i).getValues(), 8);
-      double midSumValue = BytesUtils.bytesToDouble(argument.getBinary(i).getValues(), 8);
+      long midCountValue =
+          BytesUtils.bytesToLong(argument.getBinary(i).getValuesAndLength().left, 8);
+      double midSumValue =
+          BytesUtils.bytesToDouble(argument.getBinary(i).getValuesAndLength().left, 8);
       countValue += midCountValue;
       sumValue += midSumValue;
     }

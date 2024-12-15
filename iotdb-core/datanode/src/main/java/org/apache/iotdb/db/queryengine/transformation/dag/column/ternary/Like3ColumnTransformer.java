@@ -97,7 +97,9 @@ public class Like3ColumnTransformer extends TernaryColumnTransformer {
           pattern
               .getMatcher()
               .match(
-                  firstColumn.getBinary(i).getValues(), 0, firstColumn.getBinary(i).getLength()));
+                  firstColumn.getBinary(i).getValuesAndLength().left,
+                  0,
+                  firstColumn.getBinary(i).getLength()));
     } else {
       builder.appendNull();
     }

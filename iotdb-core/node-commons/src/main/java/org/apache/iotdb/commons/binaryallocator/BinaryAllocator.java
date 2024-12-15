@@ -125,7 +125,7 @@ public class BinaryAllocator {
       int arenaIndex = binary.getArenaIndex();
       if (arenaIndex != -1) {
         Arena arena = heapArenas[arenaIndex];
-        arena.deallocate(binary.getValues());
+        arena.deallocate(binary.getValuesAndLength().left);
       }
     }
   }

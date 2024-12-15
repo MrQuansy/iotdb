@@ -176,7 +176,7 @@ public class SubscriptionSessionDataSet implements ISessionDataSet {
       case TEXT:
       case STRING:
       case BLOB:
-        final Binary binaryValue = new Binary((((Binary[]) value)[index]).getValues());
+        final Binary binaryValue = ((Binary[]) value)[index];
         field.setBinaryV(binaryValue);
         break;
       default:

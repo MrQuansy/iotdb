@@ -78,7 +78,7 @@ public abstract class PipeTransferFilePieceReq extends TPipeTransferReq {
 
     fileName = ReadWriteIOUtils.readString(transferReq.body);
     startWritingOffset = ReadWriteIOUtils.readLong(transferReq.body);
-    filePiece = ReadWriteIOUtils.readBinary(transferReq.body).getValues();
+    filePiece = ReadWriteIOUtils.readBinary(transferReq.body).getValuesAndLength().left;
 
     version = transferReq.version;
     type = transferReq.type;

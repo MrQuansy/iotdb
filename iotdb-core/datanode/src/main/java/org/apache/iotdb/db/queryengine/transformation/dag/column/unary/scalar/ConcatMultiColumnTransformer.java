@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 import java.util.List;
 
@@ -68,7 +69,7 @@ public class ConcatMultiColumnTransformer extends MultiColumnTransformer {
     for (Column childrenColumn : childrenColumns) {
       if (!childrenColumn.isNull(i)) {
         isNull = false;
-        length += childrenColumn.getBinary(i).getValues().length;
+        length += childrenColumn.getBinary(i).getLength();
       }
     }
     if (isNull) {
@@ -79,9 +80,9 @@ public class ConcatMultiColumnTransformer extends MultiColumnTransformer {
       int index = 0;
       for (Column childrenColumn : childrenColumns) {
         if (!childrenColumn.isNull(i)) {
-          byte[] value = childrenColumn.getBinary(i).getValues();
-          System.arraycopy(value, 0, result, index, value.length);
-          index += value.length;
+          Pair<byte[], Integer> binaryPair = childrenColumn.getBinary(i).getValuesAndLength();
+          System.arraycopy(binaryPair.left, 0, result, index, binaryPair.right);
+          index += binaryPair.right;
         }
       }
       builder.writeBinary(new Binary(result));

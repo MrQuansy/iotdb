@@ -28,7 +28,9 @@ public class PipeBinaryTransformer {
 
   public static org.apache.iotdb.pipe.api.type.Binary transformToPipeBinary(
       org.apache.tsfile.utils.Binary binary) {
-    return binary == null ? null : new org.apache.iotdb.pipe.api.type.Binary(binary.getValues());
+    return binary == null
+        ? null
+        : new org.apache.iotdb.pipe.api.type.Binary(binary.getValuesAndLength().left);
   }
 
   private PipeBinaryTransformer() {

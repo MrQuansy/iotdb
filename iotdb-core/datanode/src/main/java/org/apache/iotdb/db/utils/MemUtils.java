@@ -28,7 +28,6 @@ import org.apache.iotdb.rpc.TSStatusCode;
 import org.apache.tsfile.common.conf.TSFileConfig;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.utils.Binary;
-import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.record.TSRecord;
 import org.apache.tsfile.write.record.datapoint.BooleanDataPoint;
 import org.apache.tsfile.write.record.datapoint.DataPoint;
@@ -98,17 +97,18 @@ public class MemUtils {
   }
 
   public static long getBinarySize(Binary value) {
-    return RamUsageEstimator.NUM_BYTES_OBJECT_HEADER + RamUsageEstimator.sizeOf(value.getValues());
+    return value.ramBytesUsed();
   }
 
   public static long getBinaryColumnSize(Binary[] column, int start, int end, TSStatus[] results) {
     long memSize = 0;
-    memSize += (long) (end - start) * RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
     for (int i = start; i < end; i++) {
       if (results == null
           || results[i] == null
           || results[i].code == TSStatusCode.SUCCESS_STATUS.getStatusCode()) {
-        memSize += RamUsageEstimator.sizeOf(column[i].getValues());
+        memSize += column[i].ramBytesUsed();
+      } else {
+        memSize += column[i].ramShallowBytesUsed();
       }
     }
     return memSize;

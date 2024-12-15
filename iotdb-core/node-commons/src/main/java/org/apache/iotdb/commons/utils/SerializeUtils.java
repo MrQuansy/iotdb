@@ -25,6 +25,7 @@ import org.apache.tsfile.read.TimeValuePair;
 import org.apache.tsfile.read.common.BatchData;
 import org.apache.tsfile.read.common.BatchData.BatchDataType;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 import org.apache.tsfile.utils.TsPrimitiveType;
 
@@ -232,7 +233,7 @@ public class SerializeUtils {
       dataOutputStream.writeLong(timeValuePair.getTimestamp());
       if (timeValuePair.getTimestamp() != Long.MIN_VALUE) {
         dataOutputStream.writeInt(timeValuePair.getValue().getBinary().getLength());
-        dataOutputStream.write(timeValuePair.getValue().getBinary().getValues());
+        BinaryUtils.serializeBytes(dataOutputStream, timeValuePair.getValue().getBinary());
       }
     }
   }
@@ -339,7 +340,7 @@ public class SerializeUtils {
           dataOutputStream.writeLong(timeValuePair.getTimestamp());
           if (timeValuePair.getTimestamp() != Long.MIN_VALUE) {
             dataOutputStream.writeInt(timeValuePair.getValue().getBinary().getLength());
-            dataOutputStream.write(timeValuePair.getValue().getBinary().getValues());
+            BinaryUtils.serializeBytes(dataOutputStream, timeValuePair.getValue().getBinary());
           }
           break;
         case BOOLEAN:

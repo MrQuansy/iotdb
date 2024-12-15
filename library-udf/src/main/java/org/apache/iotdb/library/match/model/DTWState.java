@@ -71,9 +71,7 @@ public class DTWState implements State {
   }
 
   @Override
-  public void deserialize(byte[] bytes) {
-    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-
+  public void deserialize(ByteBuffer byteBuffer) {
     int size = byteBuffer.getInt();
     for (int i = 0; i < size; i++) {
       updateBuffer(byteBuffer.getLong(), byteBuffer.getDouble());
@@ -152,7 +150,7 @@ public class DTWState implements State {
     DTWState newState = new DTWState();
     newState.setSize(5);
     newState.reset();
-    newState.deserialize(state.serialize());
+    newState.deserialize(ByteBuffer.wrap(state.serialize()));
     for (int i = 0; i < state.getTimeBuffer().length; i++) {
       System.out.println(state.getTimeBuffer()[i] + " " + state.getValueBuffer()[i]);
     }

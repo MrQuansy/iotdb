@@ -31,7 +31,7 @@ import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.read.common.block.TsBlock;
 import org.apache.tsfile.read.common.block.column.TsBlockSerde;
 import org.apache.tsfile.utils.Binary;
-import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.DateUtils;
 
 import java.nio.ByteBuffer;
@@ -493,8 +493,8 @@ public class IoTDBRpcDataSet {
             .getBinary(tsBlockIndex)
             .getStringValue(TSFileConfig.STRING_CHARSET);
       case BLOB:
-        return BytesUtils.parseBlobByteArrayToString(
-            curTsBlock.getColumn(tsBlockColumnIndex).getBinary(tsBlockIndex).getValues());
+        return BinaryUtils.parseBlobByteArrayToString(
+            curTsBlock.getColumn(tsBlockColumnIndex).getBinary(tsBlockIndex));
       case DATE:
         return DateUtils.formatDate(curTsBlock.getColumn(tsBlockColumnIndex).getInt(tsBlockIndex));
       default:
@@ -553,8 +553,8 @@ public class IoTDBRpcDataSet {
             .getBinary(tsBlockIndex)
             .getStringValue(TSFileConfig.STRING_CHARSET);
       case BLOB:
-        return BytesUtils.parseBlobByteArrayToString(
-            curTsBlock.getColumn(index).getBinary(tsBlockIndex).getValues());
+        return BinaryUtils.parseBlobByteArrayToString(
+            curTsBlock.getColumn(index).getBinary(tsBlockIndex));
       case DATE:
         return DateUtils.formatDate(curTsBlock.getColumn(index).getInt(tsBlockIndex));
       default:

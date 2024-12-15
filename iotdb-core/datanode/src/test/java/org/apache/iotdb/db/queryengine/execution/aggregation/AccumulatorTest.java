@@ -600,7 +600,7 @@ public class AccumulatorTest {
     Assert.assertFalse(stddevAccumulator.hasFinalResult());
     intermediateResult[0] = new BinaryColumnBuilder(null, 1);
     stddevAccumulator.outputIntermediate(intermediateResult);
-    byte[] result = intermediateResult[0].build().getBinary(0).getValues();
+    byte[] result = intermediateResult[0].build().getBinary(0).getValuesAndLength().left;
     Assert.assertEquals(100, BytesUtils.bytesToLong(result, Long.BYTES));
     Assert.assertEquals(49.50, BytesUtils.bytesToDouble(result, Long.BYTES), 0.001);
     Assert.assertEquals(
@@ -647,7 +647,7 @@ public class AccumulatorTest {
     Assert.assertFalse(stddevPopAccumulator.hasFinalResult());
     intermediateResult[0] = new BinaryColumnBuilder(null, 1);
     stddevPopAccumulator.outputIntermediate(intermediateResult);
-    byte[] result = intermediateResult[0].build().getBinary(0).getValues();
+    byte[] result = intermediateResult[0].build().getBinary(0).getValuesAndLength().left;
     Assert.assertEquals(100, BytesUtils.bytesToLong(result, Long.BYTES));
     Assert.assertEquals(49.50, BytesUtils.bytesToDouble(result, Long.BYTES), 0.001);
     Assert.assertEquals(
@@ -701,7 +701,7 @@ public class AccumulatorTest {
     Assert.assertFalse(stddevSampAccumulator.hasFinalResult());
     intermediateResult[0] = new BinaryColumnBuilder(null, 1);
     stddevSampAccumulator.outputIntermediate(intermediateResult);
-    byte[] result = intermediateResult[0].build().getBinary(0).getValues();
+    byte[] result = intermediateResult[0].build().getBinary(0).getValuesAndLength().left;
     Assert.assertEquals(100, BytesUtils.bytesToLong(result, Long.BYTES));
     Assert.assertEquals(49.50, BytesUtils.bytesToDouble(result, Long.BYTES), 0.001);
     Assert.assertEquals(
@@ -755,7 +755,7 @@ public class AccumulatorTest {
     Assert.assertFalse(varianceAccumulator.hasFinalResult());
     intermediateResult[0] = new BinaryColumnBuilder(null, 1);
     varianceAccumulator.outputIntermediate(intermediateResult);
-    byte[] result = intermediateResult[0].build().getBinary(0).getValues();
+    byte[] result = intermediateResult[0].build().getBinary(0).getValuesAndLength().left;
     Assert.assertEquals(100, BytesUtils.bytesToLong(result, Long.BYTES));
     Assert.assertEquals(49.50, BytesUtils.bytesToDouble(result, Long.BYTES), 0.001);
     Assert.assertEquals(
@@ -802,7 +802,7 @@ public class AccumulatorTest {
     Assert.assertFalse(varPopAccumulator.hasFinalResult());
     intermediateResult[0] = new BinaryColumnBuilder(null, 1);
     varPopAccumulator.outputIntermediate(intermediateResult);
-    byte[] result = intermediateResult[0].build().getBinary(0).getValues();
+    byte[] result = intermediateResult[0].build().getBinary(0).getValuesAndLength().left;
     Assert.assertEquals(100, BytesUtils.bytesToLong(result, Long.BYTES));
     Assert.assertEquals(49.50, BytesUtils.bytesToDouble(result, Long.BYTES), 0.001);
     Assert.assertEquals(
@@ -856,7 +856,7 @@ public class AccumulatorTest {
     Assert.assertFalse(varSampAccumulator.hasFinalResult());
     intermediateResult[0] = new BinaryColumnBuilder(null, 1);
     varSampAccumulator.outputIntermediate(intermediateResult);
-    byte[] result = intermediateResult[0].build().getBinary(0).getValues();
+    byte[] result = intermediateResult[0].build().getBinary(0).getValuesAndLength().left;
     Assert.assertEquals(100, BytesUtils.bytesToLong(result, Long.BYTES));
     Assert.assertEquals(49.50, BytesUtils.bytesToDouble(result, Long.BYTES), 0.001);
     Assert.assertEquals(

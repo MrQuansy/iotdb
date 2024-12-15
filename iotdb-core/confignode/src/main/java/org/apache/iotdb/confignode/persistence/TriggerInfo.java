@@ -47,6 +47,7 @@ import org.apache.iotdb.consensus.common.DataSet;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.apache.thrift.TException;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,7 +139,7 @@ public class TriggerInfo implements SnapshotProcessor {
         existedJarToMD5.put(triggerInformation.getJarName(), triggerInformation.getJarFileMD5());
         if (physicalPlan.getJarFile() != null) {
           triggerExecutableManager.saveToInstallDir(
-              ByteBuffer.wrap(physicalPlan.getJarFile().getValues()),
+              BinaryUtils.wrapToByteBuffer(physicalPlan.getJarFile()),
               triggerInformation.getJarName());
         }
       }

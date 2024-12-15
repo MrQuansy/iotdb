@@ -56,7 +56,10 @@ public class LikeTransformer extends UnaryTransformer {
 
     for (int i = 0; i < count; i++) {
       if (!isNulls[i]) {
-        boolean res = pattern.getMatcher().match(binaries[i].getValues());
+        boolean res =
+            pattern
+                .getMatcher()
+                .match(binaries[i].getValuesAndLength().left, 0, binaries[i].getLength());
         builder.writeBoolean(res);
       } else {
         builder.appendNull();

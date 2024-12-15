@@ -54,14 +54,14 @@ public class Utils {
       case TEXT:
       case STRING:
       case BLOB:
-        BytesUtils.intToBytes(value.getBinary().getValues().length, valueBytes, offset);
+        BytesUtils.intToBytes(value.getBinary().getLength(), valueBytes, offset);
         offset += 4;
         System.arraycopy(
-            value.getBinary().getValues(),
+            value.getBinary().getValuesAndLength().left,
             0,
             valueBytes,
             offset,
-            value.getBinary().getValues().length);
+            value.getBinary().getLength());
         break;
       case BOOLEAN:
         BytesUtils.boolToBytes(value.getBoolean(), valueBytes, offset);
@@ -72,9 +72,9 @@ public class Utils {
   }
 
   public static void serializeBinaryValue(Binary binary, byte[] valueBytes, int offset) {
-    BytesUtils.intToBytes(binary.getValues().length, valueBytes, offset);
+    BytesUtils.intToBytes(binary.getLength(), valueBytes, offset);
     offset += Integer.BYTES;
-    System.arraycopy(binary.getValues(), 0, valueBytes, offset, binary.getValues().length);
+    System.arraycopy(binary.getValuesAndLength().left, 0, valueBytes, offset, binary.getLength());
   }
 
   public static byte[] serializeTimeValue(
@@ -117,7 +117,7 @@ public class Utils {
       case TEXT:
       case BLOB:
       case STRING:
-        return 4 + value.getBinary().getValues().length;
+        return 4 + value.getBinary().getLength();
       default:
         throw new UnSupportedDataTypeException(
             String.format("Unsupported data type : %s", dataType));

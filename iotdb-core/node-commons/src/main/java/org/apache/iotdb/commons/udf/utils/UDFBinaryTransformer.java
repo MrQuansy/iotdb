@@ -32,6 +32,8 @@ public class UDFBinaryTransformer {
 
   public static org.apache.iotdb.udf.api.type.Binary transformToUDFBinary(
       org.apache.tsfile.utils.Binary binary) {
-    return binary == null ? null : new org.apache.iotdb.udf.api.type.Binary(binary.getValues());
+    return binary == null
+        ? null
+        : new org.apache.iotdb.udf.api.type.Binary(binary.getValuesAndLength().left);
   }
 }

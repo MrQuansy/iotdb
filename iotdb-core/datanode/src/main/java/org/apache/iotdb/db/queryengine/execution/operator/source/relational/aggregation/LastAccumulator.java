@@ -104,7 +104,7 @@ public class LastAccumulator implements TableAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       long time = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, 0);
       int offset = Long.BYTES;
 

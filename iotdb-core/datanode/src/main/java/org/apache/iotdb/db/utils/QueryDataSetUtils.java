@@ -29,6 +29,7 @@ import org.apache.tsfile.common.conf.TSFileDescriptor;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.read.common.block.TsBlock;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BitMap;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.Pair;
@@ -244,7 +245,7 @@ public class QueryDataSetUtils {
                 bitmaps[k] = (bitmaps[k] << 1) | FLAG;
                 Binary binary = column.getBinary(i);
                 dataOutputStream.writeInt(binary.getLength());
-                dataOutputStream.write(binary.getValues());
+                BinaryUtils.serializeBytes(dataOutputStream, binary);
                 valueOccupation[k] = valueOccupation[k] + 4 + binary.getLength();
               }
               if (rowCount != 0 && rowCount % 8 == 0) {
@@ -542,7 +543,7 @@ public class QueryDataSetUtils {
         bitmaps[columnIndex] = (bitmaps[columnIndex] << 1) | FLAG;
         Binary binary = column.getBinary(i);
         dataOutputStream.writeInt(binary.getLength());
-        dataOutputStream.write(binary.getValues());
+        BinaryUtils.serializeBytes(dataOutputStream, binary);
         valueOccupation[columnIndex] = valueOccupation[columnIndex] + 4 + binary.getLength();
       }
       if (rowCount != 0 && rowCount % 8 == 0) {

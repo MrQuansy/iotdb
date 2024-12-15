@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 public class ConcatColumnTransformer extends UnaryColumnTransformer {
   private final byte[] value;
@@ -61,10 +62,13 @@ public class ConcatColumnTransformer extends UnaryColumnTransformer {
 
   private void transform(Column column, ColumnBuilder columnBuilder, int i) {
     if (!column.isNull(i)) {
+      Pair<byte[], Integer> binaryPair = column.getBinary(i).getValuesAndLength();
       if (isBehind) {
-        columnBuilder.writeBinary(new Binary(concat(column.getBinary(i).getValues(), value)));
+        columnBuilder.writeBinary(
+            new Binary(concat(binaryPair.left, binaryPair.right, value, value.length)));
       } else {
-        columnBuilder.writeBinary(new Binary(concat(value, column.getBinary(i).getValues())));
+        columnBuilder.writeBinary(
+            new Binary(concat(value, value.length, binaryPair.left, binaryPair.right)));
       }
     } else {
       columnBuilder.writeBinary(new Binary(value));
@@ -76,6 +80,14 @@ public class ConcatColumnTransformer extends UnaryColumnTransformer {
     byte[] result = new byte[leftValue.length + rightValue.length];
     System.arraycopy(leftValue, 0, result, 0, leftValue.length);
     System.arraycopy(rightValue, 0, result, leftValue.length, rightValue.length);
+    return result;
+  }
+
+  public static byte[] concat(
+      byte[] leftValue, int leftLength, byte[] rightValue, int rightLength) {
+    byte[] result = new byte[leftLength + rightLength];
+    System.arraycopy(leftValue, 0, result, 0, leftLength);
+    System.arraycopy(rightValue, 0, result, leftLength, rightLength);
     return result;
   }
 }

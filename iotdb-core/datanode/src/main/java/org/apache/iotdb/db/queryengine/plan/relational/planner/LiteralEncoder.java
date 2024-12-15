@@ -108,7 +108,7 @@ public final class LiteralEncoder {
 
     if (isBlobType(type)) {
       Binary value = (Binary) object;
-      return new BinaryLiteral(value.getValues());
+      return new BinaryLiteral(value.getValuesAndLength().left);
     }
 
     if (type.equals(DateType.DATE)) {

@@ -121,7 +121,7 @@ public class RowImpl implements Row {
   }
 
   public static Binary transformToUDFBinary(org.apache.tsfile.utils.Binary binary) {
-    return binary == null ? null : new Binary(binary.getValues());
+    return binary == null ? null : new Binary(binary.getValuesAndLength().left);
   }
 
   private static Type transformToUDFDataType(TSDataType tsDataType) {

@@ -101,7 +101,7 @@ public abstract class MaxMinByBaseAccumulator implements Accumulator {
     if (partialResult[0].isNull(0)) {
       return;
     }
-    byte[] bytes = partialResult[0].getBinary(0).getValues();
+    byte[] bytes = partialResult[0].getBinary(0).getValuesAndLength().left;
     updateFromBytesIntermediateInput(bytes);
   }
 

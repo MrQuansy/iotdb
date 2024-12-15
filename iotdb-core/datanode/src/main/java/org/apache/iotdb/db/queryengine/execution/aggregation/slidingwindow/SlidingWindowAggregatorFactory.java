@@ -127,48 +127,49 @@ public class SlidingWindowAggregatorFactory {
     maxByComparators.put(
         TSDataType.INT32,
         Comparator.comparingInt(
-            o -> BytesUtils.bytesToInt(o.getBinary(0).getValues(), Long.BYTES)));
+            o -> BytesUtils.bytesToInt(o.getBinary(0).getValuesAndLength().left, Long.BYTES)));
     maxByComparators.put(
         TSDataType.INT64,
         Comparator.comparingLong(
             o ->
                 BytesUtils.bytesToLongFromOffset(
-                    o.getBinary(0).getValues(), Long.BYTES, Long.BYTES)));
+                    o.getBinary(0).getValuesAndLength().left, Long.BYTES, Long.BYTES)));
     maxByComparators.put(
         TSDataType.FLOAT,
-        Comparator.comparing(o -> BytesUtils.bytesToFloat(o.getBinary(0).getValues(), Long.BYTES)));
+        Comparator.comparing(
+            o -> BytesUtils.bytesToFloat(o.getBinary(0).getValuesAndLength().left, Long.BYTES)));
     maxByComparators.put(
         TSDataType.DOUBLE,
         Comparator.comparingDouble(
-            o -> BytesUtils.bytesToDouble(o.getBinary(0).getValues(), Long.BYTES)));
+            o -> BytesUtils.bytesToDouble(o.getBinary(0).getValuesAndLength().left, Long.BYTES)));
 
     // return a value greater than 0 if o1 is numerically less than o2
     minByComparators.put(
         TSDataType.INT32,
         (o1, o2) ->
             Integer.compare(
-                BytesUtils.bytesToInt(o2.getBinary(0).getValues(), Long.BYTES),
-                BytesUtils.bytesToInt(o1.getBinary(0).getValues(), Long.BYTES)));
+                BytesUtils.bytesToInt(o2.getBinary(0).getValuesAndLength().left, Long.BYTES),
+                BytesUtils.bytesToInt(o1.getBinary(0).getValuesAndLength().left, Long.BYTES)));
     minByComparators.put(
         TSDataType.INT64,
         (o1, o2) ->
             Long.compare(
                 BytesUtils.bytesToLongFromOffset(
-                    o2.getBinary(0).getValues(), Long.BYTES, Long.BYTES),
+                    o2.getBinary(0).getValuesAndLength().left, Long.BYTES, Long.BYTES),
                 BytesUtils.bytesToLongFromOffset(
-                    o1.getBinary(0).getValues(), Long.BYTES, Long.BYTES)));
+                    o1.getBinary(0).getValuesAndLength().left, Long.BYTES, Long.BYTES)));
     minByComparators.put(
         TSDataType.FLOAT,
         (o1, o2) ->
             Float.compare(
-                BytesUtils.bytesToFloat(o2.getBinary(0).getValues(), Long.BYTES),
-                BytesUtils.bytesToFloat(o1.getBinary(0).getValues(), Long.BYTES)));
+                BytesUtils.bytesToFloat(o2.getBinary(0).getValuesAndLength().left, Long.BYTES),
+                BytesUtils.bytesToFloat(o1.getBinary(0).getValuesAndLength().left, Long.BYTES)));
     minByComparators.put(
         TSDataType.DOUBLE,
         (o1, o2) ->
             Double.compare(
-                BytesUtils.bytesToDouble(o2.getBinary(0).getValues(), Long.BYTES),
-                BytesUtils.bytesToDouble(o1.getBinary(0).getValues(), Long.BYTES)));
+                BytesUtils.bytesToDouble(o2.getBinary(0).getValuesAndLength().left, Long.BYTES),
+                BytesUtils.bytesToDouble(o1.getBinary(0).getValuesAndLength().left, Long.BYTES)));
   }
 
   public static SlidingWindowAggregator createSlidingWindowAggregator(

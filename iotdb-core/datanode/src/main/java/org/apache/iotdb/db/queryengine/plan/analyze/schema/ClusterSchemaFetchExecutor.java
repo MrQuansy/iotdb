@@ -45,9 +45,9 @@ import org.apache.iotdb.rpc.TSStatusCode;
 import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.read.common.block.TsBlock;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -284,7 +284,7 @@ class ClusterSchemaFetchExecutor {
 
   private void parseFetchedData(
       Binary data, ClusterSchemaTree resultSchemaTree, Set<String> databaseSet) {
-    InputStream inputStream = new ByteArrayInputStream(data.getValues());
+    InputStream inputStream = BinaryUtils.wrapToByteStream(data);
     try {
       byte type = ReadWriteIOUtils.readByte(inputStream);
       if (type == 0) {

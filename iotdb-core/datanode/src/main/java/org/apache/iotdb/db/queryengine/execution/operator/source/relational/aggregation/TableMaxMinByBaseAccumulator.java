@@ -107,7 +107,7 @@ public abstract class TableMaxMinByBaseAccumulator implements TableAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       updateFromBytesIntermediateInput(bytes);
     }
   }

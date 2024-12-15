@@ -84,7 +84,10 @@ public class Like2ColumnTransformer extends BinaryColumnTransformer {
       builder.writeBoolean(
           pattern
               .getMatcher()
-              .match(leftColumn.getBinary(i).getValues(), 0, leftColumn.getBinary(i).getLength()));
+              .match(
+                  leftColumn.getBinary(i).getValuesAndLength().left,
+                  0,
+                  leftColumn.getBinary(i).getLength()));
     } else {
       builder.appendNull();
     }

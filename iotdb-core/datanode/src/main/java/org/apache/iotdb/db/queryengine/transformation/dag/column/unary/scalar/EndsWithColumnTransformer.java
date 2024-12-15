@@ -25,6 +25,7 @@ import org.apache.iotdb.db.queryengine.transformation.dag.column.unary.UnaryColu
 import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.read.common.type.Type;
+import org.apache.tsfile.utils.Pair;
 
 import static org.apache.iotdb.db.queryengine.transformation.dag.column.unary.scalar.StartsWithColumnTransformer.equalCompare;
 
@@ -41,9 +42,14 @@ public class EndsWithColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (!column.isNull(i)) {
-        byte[] currentValue = column.getBinary(i).getValues();
+        Pair<byte[], Integer> currentValuePair = column.getBinary(i).getValuesAndLength();
         columnBuilder.writeBoolean(
-            equalCompare(currentValue, suffix, currentValue.length - suffix.length));
+            equalCompare(
+                currentValuePair.left,
+                currentValuePair.right,
+                suffix,
+                suffix.length,
+                currentValuePair.right - suffix.length));
       } else {
         columnBuilder.appendNull();
       }
@@ -54,9 +60,14 @@ public class EndsWithColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder, boolean[] selection) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (selection[i] && !column.isNull(i)) {
-        byte[] currentValue = column.getBinary(i).getValues();
+        Pair<byte[], Integer> currentValuePair = column.getBinary(i).getValuesAndLength();
         columnBuilder.writeBoolean(
-            equalCompare(currentValue, suffix, currentValue.length - suffix.length));
+            equalCompare(
+                currentValuePair.left,
+                currentValuePair.right,
+                suffix,
+                suffix.length,
+                currentValuePair.right - suffix.length));
       } else {
         columnBuilder.appendNull();
       }

@@ -44,7 +44,8 @@ public class LikeColumnTransformer extends UnaryColumnTransformer {
       if (!column.isNull(i)) {
         Binary value = childColumnTransformer.getType().getBinary(column, i);
         returnType.writeBoolean(
-            columnBuilder, pattern.getMatcher().match(value.getValues(), 0, value.getLength()));
+            columnBuilder,
+            pattern.getMatcher().match(value.getValuesAndLength().left, 0, value.getLength()));
       } else {
         columnBuilder.appendNull();
       }
@@ -57,7 +58,8 @@ public class LikeColumnTransformer extends UnaryColumnTransformer {
       if (selection[i] && !column.isNull(i)) {
         Binary value = childColumnTransformer.getType().getBinary(column, i);
         returnType.writeBoolean(
-            columnBuilder, pattern.getMatcher().match(value.getValues(), 0, value.getLength()));
+            columnBuilder,
+            pattern.getMatcher().match(value.getValuesAndLength().left, 0, value.getLength()));
       } else {
         columnBuilder.appendNull();
       }

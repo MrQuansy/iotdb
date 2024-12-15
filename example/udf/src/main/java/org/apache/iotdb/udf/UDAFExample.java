@@ -64,8 +64,7 @@ public class UDAFExample implements UDAF {
     }
 
     @Override
-    public void deserialize(byte[] bytes) {
-      ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    public void deserialize(ByteBuffer buffer) {
       sum = buffer.getDouble();
       count = buffer.getLong();
     }

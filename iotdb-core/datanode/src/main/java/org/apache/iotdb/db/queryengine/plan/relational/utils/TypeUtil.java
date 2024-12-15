@@ -35,6 +35,7 @@ import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.read.common.type.TypeEnum;
 import org.apache.tsfile.read.common.type.UnknownType;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 
 import java.io.DataOutputStream;
@@ -282,13 +283,14 @@ public class TypeUtil {
       case TEXT:
       case STRING:
       case BLOB:
-        byte[] value = column.getBinary(position).getValues();
-        intToBytes(value.length, fixedChunk, fixedOffset);
-        if (value.length <= 12) {
-          System.arraycopy(value, 0, fixedChunk, fixedOffset + Integer.BYTES, value.length);
+        Binary binary = column.getBinary(position);
+        byte[] value = binary.getValuesAndLength().left;
+        intToBytes(binary.getLength(), fixedChunk, fixedOffset);
+        if (binary.getLength() <= 12) {
+          System.arraycopy(value, 0, fixedChunk, fixedOffset + Integer.BYTES, binary.getLength());
         } else {
           intToBytes(variableOffset, fixedChunk, fixedOffset + Integer.BYTES + Long.BYTES);
-          System.arraycopy(value, 0, variableChunk, variableOffset, value.length);
+          System.arraycopy(value, 0, variableChunk, variableOffset, binary.getLength());
         }
         break;
       default:
@@ -322,9 +324,11 @@ public class TypeUtil {
       case BLOB:
         int leftLength = bytesToInt(fixedChunk, fixedOffset);
         byte[] leftValue = new byte[leftLength];
-        byte[] rightValue = column.getBinary(position).getValues();
 
-        if (leftLength != rightValue.length) {
+        Binary rightBinary = column.getBinary(position);
+        byte[] rightValue = rightBinary.getValuesAndLength().left;
+
+        if (leftLength != rightBinary.getLength()) {
           return false;
         }
 
@@ -490,7 +494,8 @@ public class TypeUtil {
       case TEXT:
       case STRING:
       case BLOB:
-        return XxHash64.hash(column.getBinary(position).getValues());
+        Pair<byte[], Integer> valuesLengthPair = column.getBinary(position).getValuesAndLength();
+        return XxHash64.hash(valuesLengthPair.left, 0, valuesLengthPair.right);
       default:
         throw new UnsupportedOperationException();
     }

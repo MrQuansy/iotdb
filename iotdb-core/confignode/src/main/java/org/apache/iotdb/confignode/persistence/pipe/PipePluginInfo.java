@@ -40,6 +40,7 @@ import org.apache.iotdb.pipe.api.customizer.parameter.PipeParameters;
 import org.apache.iotdb.pipe.api.exception.PipeException;
 import org.apache.iotdb.rpc.TSStatusCode;
 
+import org.apache.tsfile.utils.BinaryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,7 +204,7 @@ public class PipePluginInfo implements SnapshotProcessor {
 
       if (createPipePluginPlan.getJarFile() != null) {
         pipePluginExecutableManager.savePluginToInstallDir(
-            ByteBuffer.wrap(createPipePluginPlan.getJarFile().getValues()),
+            BinaryUtils.wrapToByteBuffer(createPipePluginPlan.getJarFile()),
             createPipePluginPlan.getPipePluginMeta().getPluginName(),
             pipePluginMeta.getJarName());
       }

@@ -752,7 +752,7 @@ public class InsertNodeMemoryEstimator {
     // --arrayHeader--
     // ----values-----
     return RamUsageEstimator.alignObjectSize(NUM_BYTES_OBJECT_HEADER + NUM_BYTES_OBJECT_REF)
-        + RamUsageEstimator.alignObjectSize(NUM_BYTES_ARRAY_HEADER + binary.getValues().length);
+        + RamUsageEstimator.alignObjectSize(NUM_BYTES_ARRAY_HEADER + binary.getLength());
   }
 
   private static long sizeOfString(String value) {

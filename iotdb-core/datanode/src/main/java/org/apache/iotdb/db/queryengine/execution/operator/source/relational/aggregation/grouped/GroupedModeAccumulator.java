@@ -115,7 +115,7 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       deserializeAndMergeCountMap(groupIds[i], bytes);
     }
   }
@@ -275,7 +275,7 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
                     + Integer.BYTES
                     + (Integer.BYTES + Long.BYTES) * countMap.size()
                     + countMap.keySet().stream()
-                        .mapToInt(key -> key.getBinary().getValues().length)
+                        .mapToInt(key -> key.getBinary().getLength())
                         .sum()];
         BytesUtils.boolToBytes(nullCounts.get(groupId) != 0, bytes, 0);
         if (nullCounts.get(groupId) != 0) {

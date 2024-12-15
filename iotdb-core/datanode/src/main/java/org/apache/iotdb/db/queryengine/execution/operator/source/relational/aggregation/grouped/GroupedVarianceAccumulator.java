@@ -105,7 +105,7 @@ public class GroupedVarianceAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       long intermediateCount = BytesUtils.bytesToLong(bytes, Long.BYTES);
       double intermediateMean = BytesUtils.bytesToDouble(bytes, Long.BYTES);
       double intermediateM2 = BytesUtils.bytesToDouble(bytes, (Long.BYTES + Double.BYTES));

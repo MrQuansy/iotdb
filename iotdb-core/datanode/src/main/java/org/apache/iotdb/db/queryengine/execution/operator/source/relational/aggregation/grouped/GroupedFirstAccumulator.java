@@ -198,7 +198,7 @@ public class GroupedFirstAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       long time = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, 0);
       int offset = Long.BYTES;
 
@@ -355,7 +355,7 @@ public class GroupedFirstAccumulator implements GroupedAccumulator {
       case TEXT:
       case BLOB:
       case STRING:
-        byte[] values = binaryValues.get(groupId).getValues();
+        byte[] values = binaryValues.get(groupId).getValuesAndLength().left;
         length += Integer.BYTES + values.length;
         bytes = new byte[length];
         longToBytes(minTimes.get(groupId), bytes, 0);

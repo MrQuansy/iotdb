@@ -32,6 +32,7 @@ import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.tsfile.read.common.block.TsBlock;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 import org.apache.tsfile.write.schema.IMeasurementSchema;
@@ -40,7 +41,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,7 +77,7 @@ public class SchemaFetchScanOperatorTest {
     Assert.assertFalse(schemaFetchScanOperator.hasNext());
 
     Binary binary = tsBlock.getColumn(0).getBinary(0);
-    InputStream inputStream = new ByteArrayInputStream(binary.getValues());
+    InputStream inputStream = BinaryUtils.wrapToByteStream(binary);
     Assert.assertEquals(1, ReadWriteIOUtils.readByte(inputStream));
     ISchemaTree schemaTree = ClusterSchemaTree.deserialize(inputStream);
 

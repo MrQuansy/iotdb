@@ -260,7 +260,7 @@ public class UpdateDetailContainer implements UpdateContainer {
           final byte[] keyBytes = attributeKV.getKey().getBytes(TSFileConfig.STRING_CHARSET);
           final byte[] valueBytes =
               attributeKV.getValue() != Binary.EMPTY_VALUE
-                  ? attributeKV.getValue().getValues()
+                  ? attributeKV.getValue().getValuesAndLength().left
                   : null;
           newSize =
               2 * Integer.BYTES

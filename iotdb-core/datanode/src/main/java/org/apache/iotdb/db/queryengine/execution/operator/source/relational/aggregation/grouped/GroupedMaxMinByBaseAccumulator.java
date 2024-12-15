@@ -35,6 +35,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
 import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
 
@@ -365,7 +366,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValues();
+      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
       updateFromBytesIntermediateInput(groupIds[i], bytes);
     }
   }
@@ -607,10 +608,12 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
       case TEXT:
       case STRING:
       case BLOB:
-        byte[] values =
-            isX ? xBinaryValues.get(groupId).getValues() : yBinaryValues.get(groupId).getValues();
-        intToBytes(values.length, bytes, offset);
-        System.arraycopy(values, 0, bytes, offset + Integer.BYTES, values.length);
+        Pair<byte[], Integer> values =
+            isX
+                ? xBinaryValues.get(groupId).getValuesAndLength()
+                : yBinaryValues.get(groupId).getValuesAndLength();
+        intToBytes(values.right, bytes, offset);
+        System.arraycopy(values.left, 0, bytes, offset + Integer.BYTES, values.right);
         break;
       case BOOLEAN:
         if (isX) {
@@ -643,8 +646,8 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
       case STRING:
         return Integer.BYTES
             + (isX
-                ? xBinaryValues.get(groupId).getValues().length
-                : yBinaryValues.get(groupId).getValues().length);
+                ? xBinaryValues.get(groupId).getLength()
+                : yBinaryValues.get(groupId).getLength());
       case BOOLEAN:
         return 1;
       default:

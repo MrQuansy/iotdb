@@ -19,6 +19,8 @@
 
 package org.apache.iotdb.udf.api;
 
+import java.nio.ByteBuffer;
+
 public interface State {
   /** Reset your state object to its initial state. */
   void reset();
@@ -30,10 +32,10 @@ public interface State {
   byte[] serialize();
 
   /**
-   * Deserialize byte array into your state. The order of deserialization must be consistent with
+   * Deserialize byte buffer into your state. The order of deserialization must be consistent with
    * serialization.
    */
-  void deserialize(byte[] bytes);
+  void deserialize(ByteBuffer buffer);
 
   /** Destroy state. You may release previously binding resource in this method. */
   default void destroyState() {}
