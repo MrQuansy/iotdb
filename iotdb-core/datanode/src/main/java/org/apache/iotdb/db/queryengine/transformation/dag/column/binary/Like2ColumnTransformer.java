@@ -26,6 +26,7 @@ import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.common.conf.TSFileConfig;
 import org.apache.tsfile.common.regexp.LikePattern;
 import org.apache.tsfile.read.common.type.Type;
+import org.apache.tsfile.utils.Pair;
 
 import java.util.Optional;
 
@@ -81,13 +82,8 @@ public class Like2ColumnTransformer extends BinaryColumnTransformer {
               rightColumn.getBinary(i).getStringValue(TSFileConfig.STRING_CHARSET),
               Optional.empty(),
               false);
-      builder.writeBoolean(
-          pattern
-              .getMatcher()
-              .match(
-                  leftColumn.getBinary(i).getValuesAndLength().left,
-                  0,
-                  leftColumn.getBinary(i).getLength()));
+      Pair<byte[], Integer> binary = leftColumn.getBinary(i).getValuesAndLength();
+      builder.writeBoolean(pattern.getMatcher().match(binary.left, 0, binary.right));
     } else {
       builder.appendNull();
     }

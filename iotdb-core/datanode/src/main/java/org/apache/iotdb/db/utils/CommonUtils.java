@@ -396,7 +396,7 @@ public class CommonUtils {
   public static byte[] parseBlobStringToByteArray(String input) throws IllegalArgumentException {
     try {
       BinaryLiteral binaryLiteral = new BinaryLiteral(input);
-      return binaryLiteral.getValues();
+      return binaryLiteral.getValuesAndLength().left;
     } catch (SemanticException e) {
       throw new IllegalArgumentException(e.getMessage());
     }

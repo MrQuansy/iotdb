@@ -23,14 +23,18 @@ public class PipeBinaryTransformer {
 
   public static org.apache.tsfile.utils.Binary transformToBinary(
       org.apache.iotdb.pipe.api.type.Binary binary) {
-    return binary == null ? null : new org.apache.tsfile.utils.Binary(binary.getValues());
+    return binary == null
+        ? null
+        : new org.apache.tsfile.utils.PooledBinary(
+            binary.getValuesAndLength().left, binary.getValuesAndLength().right, -1);
   }
 
   public static org.apache.iotdb.pipe.api.type.Binary transformToPipeBinary(
       org.apache.tsfile.utils.Binary binary) {
     return binary == null
         ? null
-        : new org.apache.iotdb.pipe.api.type.Binary(binary.getValuesAndLength().left);
+        : new org.apache.iotdb.pipe.api.type.Binary(
+            binary.getValuesAndLength().left, binary.getValuesAndLength().right);
   }
 
   private PipeBinaryTransformer() {

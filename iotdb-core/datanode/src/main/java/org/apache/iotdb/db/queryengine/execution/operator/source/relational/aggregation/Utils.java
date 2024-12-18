@@ -22,6 +22,7 @@ package org.apache.iotdb.db.queryengine.execution.operator.source.relational.agg
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.utils.Binary;
 import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.TsPrimitiveType;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
 
@@ -56,12 +57,8 @@ public class Utils {
       case BLOB:
         BytesUtils.intToBytes(value.getBinary().getLength(), valueBytes, offset);
         offset += 4;
-        System.arraycopy(
-            value.getBinary().getValuesAndLength().left,
-            0,
-            valueBytes,
-            offset,
-            value.getBinary().getLength());
+        Pair<byte[], Integer> binary = value.getBinary().getValuesAndLength();
+        System.arraycopy(binary.left, 0, valueBytes, offset, binary.right);
         break;
       case BOOLEAN:
         BytesUtils.boolToBytes(value.getBoolean(), valueBytes, offset);
@@ -74,7 +71,8 @@ public class Utils {
   public static void serializeBinaryValue(Binary binary, byte[] valueBytes, int offset) {
     BytesUtils.intToBytes(binary.getLength(), valueBytes, offset);
     offset += Integer.BYTES;
-    System.arraycopy(binary.getValuesAndLength().left, 0, valueBytes, offset, binary.getLength());
+    Pair<byte[], Integer> valuePair = binary.getValuesAndLength();
+    System.arraycopy(valuePair.left, 0, valueBytes, offset, valuePair.right);
   }
 
   public static byte[] serializeTimeValue(

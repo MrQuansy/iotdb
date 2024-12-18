@@ -27,6 +27,7 @@ import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.common.regexp.LikePattern;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
 
 import java.io.IOException;
@@ -56,10 +57,8 @@ public class LikeTransformer extends UnaryTransformer {
 
     for (int i = 0; i < count; i++) {
       if (!isNulls[i]) {
-        boolean res =
-            pattern
-                .getMatcher()
-                .match(binaries[i].getValuesAndLength().left, 0, binaries[i].getLength());
+        Pair<byte[], Integer> valuePair = binaries[i].getValuesAndLength();
+        boolean res = pattern.getMatcher().match(valuePair.left, 0, valuePair.right);
         builder.writeBoolean(res);
       } else {
         builder.appendNull();

@@ -26,6 +26,7 @@ import org.apache.tsfile.file.metadata.IDeviceID;
 import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 import org.apache.tsfile.write.schema.MeasurementSchema;
 
@@ -86,7 +87,8 @@ public class WALWriteUtils {
   public static int write(Binary n, IWALByteBufferView buffer) {
     buffer.putInt(n.getLength());
 
-    buffer.put(n.getValuesAndLength().left, 0, n.getLength());
+    Pair<byte[], Integer> valuePair = n.getValuesAndLength();
+    buffer.put(valuePair.left, 0, valuePair.right);
     return INT_LEN + n.getLength();
   }
 

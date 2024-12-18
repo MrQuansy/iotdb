@@ -19,10 +19,12 @@
 
 package org.apache.iotdb.pipe.api.type;
 
+import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.Pair;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 /**
  * Override compareTo() and equals() function to Binary class. This class is used to accept Java
@@ -38,6 +40,8 @@ public class Binary implements Comparable<Binary>, Serializable {
 
   private int hash;
 
+  private int length;
+
   // indicate whether hash has been calculated
   private boolean hasCalculatedHash;
 
@@ -46,10 +50,17 @@ public class Binary implements Comparable<Binary>, Serializable {
   /** if the bytes v is modified, the modification is visible to this binary. */
   public Binary(byte[] v) {
     this.values = v;
+    this.length = (v == null) ? -1 : v.length;
   }
 
   public Binary(String s) {
     this.values = (s == null) ? null : s.getBytes(STRING_CHARSET);
+    this.length = (s == null) ? -1 : values.length;
+  }
+
+  public Binary(byte[] v, int length) {
+    this.values = v;
+    this.length = length;
   }
 
   public static Binary valueOf(String value) {
@@ -95,7 +106,7 @@ public class Binary implements Comparable<Binary>, Serializable {
   @Override
   public int hashCode() {
     if (!hasCalculatedHash) {
-      hash = Arrays.hashCode(values);
+      hash = BytesUtils.byteArrayHashCode(values, length);
       hasCalculatedHash = true;
     }
     return hash;
@@ -107,10 +118,7 @@ public class Binary implements Comparable<Binary>, Serializable {
    * @return length
    */
   public int getLength() {
-    if (this.values == null) {
-      return -1;
-    }
-    return this.values.length;
+    return length;
   }
 
   public boolean isNull() {
@@ -122,7 +130,7 @@ public class Binary implements Comparable<Binary>, Serializable {
       return null;
     }
     if (stringCache == null) {
-      stringCache = new String(this.values, STRING_CHARSET);
+      stringCache = new String(this.values, 0, length, STRING_CHARSET);
     }
     return stringCache;
   }
@@ -136,8 +144,8 @@ public class Binary implements Comparable<Binary>, Serializable {
     return getStringValue();
   }
 
-  public byte[] getValues() {
-    return values;
+  public Pair<byte[], Integer> getValuesAndLength() {
+    return new Pair<>(values, length);
   }
 
   /**

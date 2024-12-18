@@ -35,6 +35,7 @@ import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.read.common.type.TypeEnum;
 import org.apache.tsfile.read.common.type.UnknownType;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 
@@ -42,7 +43,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -338,7 +338,8 @@ public class TypeUtil {
           int variableSizeOffset = bytesToInt(fixedChunk, fixedOffset + Integer.BYTES + Long.BYTES);
           System.arraycopy(variableChunk, variableSizeOffset, leftValue, 0, leftLength);
         }
-        return Arrays.equals(leftValue, rightValue);
+        return BytesUtils.byteArrayEquals(
+            leftValue, leftValue.length, rightValue, rightBinary.getLength());
       default:
         throw new UnsupportedOperationException();
     }

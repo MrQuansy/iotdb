@@ -25,7 +25,7 @@ import org.apache.tsfile.block.column.Column;
 import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.common.regexp.LikePattern;
 import org.apache.tsfile.read.common.type.Type;
-import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 import static org.apache.iotdb.db.queryengine.plan.relational.metadata.TableMetadataImpl.isCharType;
 
@@ -42,10 +42,10 @@ public class LikeColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (!column.isNull(i)) {
-        Binary value = childColumnTransformer.getType().getBinary(column, i);
+        Pair<byte[], Integer> valuePair =
+            childColumnTransformer.getType().getBinary(column, i).getValuesAndLength();
         returnType.writeBoolean(
-            columnBuilder,
-            pattern.getMatcher().match(value.getValuesAndLength().left, 0, value.getLength()));
+            columnBuilder, pattern.getMatcher().match(valuePair.left, 0, valuePair.right));
       } else {
         columnBuilder.appendNull();
       }
@@ -56,10 +56,10 @@ public class LikeColumnTransformer extends UnaryColumnTransformer {
   protected void doTransform(Column column, ColumnBuilder columnBuilder, boolean[] selection) {
     for (int i = 0, n = column.getPositionCount(); i < n; i++) {
       if (selection[i] && !column.isNull(i)) {
-        Binary value = childColumnTransformer.getType().getBinary(column, i);
+        Pair<byte[], Integer> valuePair =
+            childColumnTransformer.getType().getBinary(column, i).getValuesAndLength();
         returnType.writeBoolean(
-            columnBuilder,
-            pattern.getMatcher().match(value.getValuesAndLength().left, 0, value.getLength()));
+            columnBuilder, pattern.getMatcher().match(valuePair.left, 0, valuePair.right));
       } else {
         columnBuilder.appendNull();
       }

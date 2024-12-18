@@ -22,22 +22,26 @@ import org.apache.iotdb.db.exception.sql.SemanticException;
 
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.Pair;
+import org.apache.tsfile.utils.PooledBinary;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static org.apache.iotdb.commons.utils.BlobUtils.parseBlobString;
 
 public class BinaryLiteral extends Literal {
 
   private final byte[] values;
+  private final int length;
 
   public BinaryLiteral(String value) {
     try {
       this.values = parseBlobString(value);
+      this.length = values.length;
     } catch (IllegalArgumentException e) {
       throw new SemanticException(e.getMessage());
     }
@@ -45,27 +49,37 @@ public class BinaryLiteral extends Literal {
 
   public BinaryLiteral(byte[] values) {
     this.values = values;
+    this.length = values.length;
   }
 
-  public byte[] getValues() {
-    return values;
+  public BinaryLiteral(byte[] values, int length) {
+    this.values = values;
+    this.length = length;
+  }
+
+  public Pair<byte[], Integer> getValuesAndLength() {
+    return new Pair<>(values, length);
   }
 
   @Override
   public void serialize(ByteBuffer byteBuffer) {
     ReadWriteIOUtils.write(LiteralType.BINARY.ordinal(), byteBuffer);
-    ReadWriteIOUtils.write(new Binary(values), byteBuffer);
+    ReadWriteIOUtils.write(getBinary(), byteBuffer);
   }
 
   @Override
   public void serialize(DataOutputStream stream) throws IOException {
     ReadWriteIOUtils.write(LiteralType.BINARY.ordinal(), stream);
-    ReadWriteIOUtils.write(new Binary(values), stream);
+    ReadWriteIOUtils.write(getBinary(), stream);
   }
 
   @Override
   public Binary getBinary() {
-    return new Binary(values);
+    if (length != values.length) {
+      return new PooledBinary(values, length);
+    } else {
+      return new Binary(values);
+    }
   }
 
   @Override
@@ -83,11 +97,11 @@ public class BinaryLiteral extends Literal {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     BinaryLiteral that = (BinaryLiteral) o;
-    return Arrays.equals(values, that.values);
+    return BytesUtils.byteArrayEquals(values, length, that.values, that.length);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(values);
+    return BytesUtils.byteArrayHashCode(values, length);
   }
 }

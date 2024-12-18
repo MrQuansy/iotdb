@@ -36,6 +36,7 @@ import org.apache.tsfile.read.common.type.TimestampType;
 import org.apache.tsfile.read.common.type.Type;
 import org.apache.tsfile.read.common.type.UnknownType;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.Pair;
 
 import javax.annotation.Nullable;
 
@@ -107,8 +108,8 @@ public final class LiteralEncoder {
     }
 
     if (isBlobType(type)) {
-      Binary value = (Binary) object;
-      return new BinaryLiteral(value.getValuesAndLength().left);
+      Pair<byte[], Integer> valuePair = ((Binary) object).getValuesAndLength();
+      return new BinaryLiteral(valuePair.left, valuePair.right);
     }
 
     if (type.equals(DateType.DATE)) {

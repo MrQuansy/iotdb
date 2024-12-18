@@ -493,7 +493,7 @@ public class IoTDBRpcDataSet {
             .getBinary(tsBlockIndex)
             .getStringValue(TSFileConfig.STRING_CHARSET);
       case BLOB:
-        return BinaryUtils.parseBlobByteArrayToString(
+        return BinaryUtils.parseBinaryToString(
             curTsBlock.getColumn(tsBlockColumnIndex).getBinary(tsBlockIndex));
       case DATE:
         return DateUtils.formatDate(curTsBlock.getColumn(tsBlockColumnIndex).getInt(tsBlockIndex));
@@ -553,8 +553,7 @@ public class IoTDBRpcDataSet {
             .getBinary(tsBlockIndex)
             .getStringValue(TSFileConfig.STRING_CHARSET);
       case BLOB:
-        return BinaryUtils.parseBlobByteArrayToString(
-            curTsBlock.getColumn(index).getBinary(tsBlockIndex));
+        return BinaryUtils.parseBinaryToString(curTsBlock.getColumn(index).getBinary(tsBlockIndex));
       case DATE:
         return DateUtils.formatDate(curTsBlock.getColumn(index).getInt(tsBlockIndex));
       default:

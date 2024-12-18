@@ -187,7 +187,8 @@ public class CustomizedReadableIntermediateResults {
       case STRING:
         return (String) value;
       case BLOB:
-        return BytesUtils.parseBlobByteArrayToString(((Binary) value).getValues());
+        Pair<byte[], Integer> valuePair = ((Binary) value).getValuesAndLength();
+        return BytesUtils.parseBlobByteArrayToString(valuePair.left, 0, valuePair.right);
       default:
         throw new UnsupportedOperationException(
             String.format("The type %s cannot be casted to string.", typeResultPair.getLeft()));

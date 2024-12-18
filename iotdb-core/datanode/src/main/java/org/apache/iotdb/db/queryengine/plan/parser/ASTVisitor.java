@@ -3198,7 +3198,7 @@ public class ASTVisitor extends IoTDBSqlParserBaseVisitor<Statement> {
     } else if (constantContext.BINARY_LITERAL() != null) {
       BinaryLiteral binaryLiteral = new BinaryLiteral(text);
       return new ConstantOperand(
-          TSDataType.BLOB, BaseEncoding.base16().encode(binaryLiteral.getValues()));
+          TSDataType.BLOB, BaseEncoding.base16().encode(binaryLiteral.getValuesAndLength().left));
     } else if (constantContext.dateExpression() != null) {
       return new ConstantOperand(
           TSDataType.INT64,

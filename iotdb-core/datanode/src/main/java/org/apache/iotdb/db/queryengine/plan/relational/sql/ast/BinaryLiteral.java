@@ -24,12 +24,13 @@ import org.apache.iotdb.db.queryengine.plan.relational.sql.parser.ParsingExcepti
 import com.google.common.base.CharMatcher;
 import com.google.common.io.BaseEncoding;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.PooledBinary;
 import org.apache.tsfile.utils.ReadWriteIOUtils;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
@@ -41,6 +42,7 @@ public class BinaryLiteral extends Literal {
       CharMatcher.inRange('A', 'F').or(CharMatcher.inRange('0', '9')).precomputed();
 
   private final byte[] value;
+  private final int length;
 
   public BinaryLiteral(String value) {
     super(null);
@@ -53,12 +55,21 @@ public class BinaryLiteral extends Literal {
       throw new ParsingException("Binary literal must contain an even number of digits");
     }
     this.value = BaseEncoding.base16().decode(hexString);
+    this.length = this.value.length;
   }
 
   public BinaryLiteral(byte[] value) {
     super(null);
     requireNonNull(value, "value is null");
     this.value = value;
+    this.length = value.length;
+  }
+
+  public BinaryLiteral(byte[] value, int length) {
+    super(null);
+    requireNonNull(value, "value is null");
+    this.value = value;
+    this.length = length;
   }
 
   public BinaryLiteral(NodeLocation location, String value) {
@@ -72,15 +83,18 @@ public class BinaryLiteral extends Literal {
       throw new ParsingException("Binary literal must contain an even number of digits", location);
     }
     this.value = BaseEncoding.base16().decode(hexString);
+    this.length = this.value.length;
   }
 
   /** Return the valued as a hex-formatted string with upper-case characters */
   public String toHexString() {
-    return BaseEncoding.base16().encode(value);
+    return BaseEncoding.base16().encode(value, 0, length);
   }
 
   public byte[] getValue() {
-    return value.clone();
+    byte[] result = new byte[length];
+    System.arraycopy(value, 0, result, 0, length);
+    return result;
   }
 
   @Override
@@ -98,12 +112,12 @@ public class BinaryLiteral extends Literal {
     }
 
     BinaryLiteral that = (BinaryLiteral) o;
-    return Arrays.equals(value, that.value);
+    return BytesUtils.byteArrayEquals(value, length, that.value, that.length);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(value);
+    return BytesUtils.byteArrayHashCode(value, length);
   }
 
   @Override
@@ -112,7 +126,8 @@ public class BinaryLiteral extends Literal {
       return false;
     }
 
-    return Arrays.equals(value, ((BinaryLiteral) other).value);
+    return BytesUtils.byteArrayEquals(
+        value, length, ((BinaryLiteral) other).value, ((BinaryLiteral) other).length);
   }
 
   // =============== serialize =================
@@ -123,9 +138,9 @@ public class BinaryLiteral extends Literal {
 
   @Override
   public void serialize(DataOutputStream stream) throws IOException {
-    ReadWriteIOUtils.write(this.value.length, stream);
-    for (byte b : value) {
-      ReadWriteIOUtils.write(b, stream);
+    ReadWriteIOUtils.write(length, stream);
+    for (int i = 0; i < length; i++) {
+      ReadWriteIOUtils.write(value[i], stream);
     }
   }
 
@@ -136,10 +151,15 @@ public class BinaryLiteral extends Literal {
     for (int i = 0; i < length; i++) {
       value[i] = ReadWriteIOUtils.readByte(byteBuffer);
     }
+    this.length = length;
   }
 
   @Override
   public Object getTsValue() {
-    return new Binary(value);
+    if (length != value.length) {
+      return new PooledBinary(value, length);
+    } else {
+      return new Binary(value);
+    }
   }
 }

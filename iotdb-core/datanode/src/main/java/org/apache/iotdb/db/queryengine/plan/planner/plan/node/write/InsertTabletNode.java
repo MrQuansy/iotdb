@@ -957,7 +957,8 @@ public class InsertTabletNode extends InsertNode implements WALEntryValue {
         for (int j = start; j < end; j++) {
           if (binaryValues[j] != null) {
             buffer.putInt(binaryValues[j].getLength());
-            buffer.put(binaryValues[j].getValuesAndLength().left, 0, binaryValues[j].getLength());
+            Pair<byte[], Integer> valuePair = binaryValues[j].getValuesAndLength();
+            buffer.put(valuePair.left, 0, valuePair.right);
           } else {
             buffer.putInt(0);
           }
