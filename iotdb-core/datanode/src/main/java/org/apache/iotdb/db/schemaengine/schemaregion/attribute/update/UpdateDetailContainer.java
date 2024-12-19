@@ -258,14 +258,14 @@ public class UpdateDetailContainer implements UpdateContainer {
         int attributeCount = 0;
         for (final Map.Entry<String, Binary> attributeKV : deviceEntry.getValue().entrySet()) {
           final byte[] keyBytes = attributeKV.getKey().getBytes(TSFileConfig.STRING_CHARSET);
-          final byte[] valueBytes =
+          final Pair<byte[], Integer> valuePair =
               attributeKV.getValue() != Binary.EMPTY_VALUE
-                  ? attributeKV.getValue().getValuesAndLength().left
-                  : null;
+                  ? attributeKV.getValue().getValuesAndLength()
+                  : new Pair<>(null, -1);
           newSize =
               2 * Integer.BYTES
                   + keyBytes.length
-                  + (Objects.nonNull(valueBytes) ? valueBytes.length : 0);
+                  + (Objects.nonNull(valuePair.left) ? valuePair.right : 0);
           if (limitBytes.get() < newSize) {
             outputStream.rewrite(mapEntryCount, mapSizeOffset);
             outputStream.rewrite(deviceEntryCount, deviceSizeOffset);
@@ -275,7 +275,7 @@ public class UpdateDetailContainer implements UpdateContainer {
           }
           limitBytes.addAndGet(-newSize);
           outputStream.writeWithLength(keyBytes);
-          outputStream.writeWithLength(valueBytes);
+          outputStream.writeWithLength(valuePair.left, valuePair.right);
           ++attributeCount;
         }
         outputStream.rewrite(deviceEntry.getValue().size(), attributeOffset);

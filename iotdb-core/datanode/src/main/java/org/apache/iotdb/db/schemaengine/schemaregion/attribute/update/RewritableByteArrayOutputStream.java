@@ -42,6 +42,15 @@ class RewritableByteArrayOutputStream extends ByteArrayOutputStream {
     write(bytes);
   }
 
+  void writeWithLength(final byte[] bytes, int length) throws IOException {
+    if (Objects.isNull(bytes)) {
+      ReadWriteIOUtils.write(ReadWriteIOUtils.NO_BYTE_TO_READ, this);
+      return;
+    }
+    ReadWriteIOUtils.write(length, this);
+    write(bytes, 0, length);
+  }
+
   int skipInt() throws IOException {
     final int result = count;
     write(intPlaceHolder);

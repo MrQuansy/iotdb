@@ -28,6 +28,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.TsPrimitiveType;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
@@ -107,8 +108,8 @@ public abstract class TableMaxMinByBaseAccumulator implements TableAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
-      updateFromBytesIntermediateInput(bytes);
+      Binary binary = argument.getBinary(i);
+      updateFromBytesIntermediateInput(binary);
     }
   }
 
@@ -343,7 +344,7 @@ public abstract class TableMaxMinByBaseAccumulator implements TableAccumulator {
     return valueBytes;
   }
 
-  private void updateFromBytesIntermediateInput(byte[] bytes) {
+  private void updateFromBytesIntermediateInput(Binary binary) {
     int offset = 0;
     // Use Column to store x value
     TsBlockBuilder builder = new TsBlockBuilder(Collections.singletonList(xDataType));
@@ -351,44 +352,44 @@ public abstract class TableMaxMinByBaseAccumulator implements TableAccumulator {
     switch (yDataType) {
       case INT32:
       case DATE:
-        int intMaxVal = BytesUtils.bytesToInt(bytes, offset);
+        int intMaxVal = BinaryUtils.binaryToInt(binary, offset);
         offset += Integer.BYTES;
-        readXFromBytesIntermediateInput(bytes, offset, columnBuilder);
+        readXFromBytesIntermediateInput(binary, offset, columnBuilder);
         updateIntResult(intMaxVal, columnBuilder.build(), 0);
         break;
       case INT64:
       case TIMESTAMP:
-        long longMaxVal = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+        long longMaxVal = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
         offset += Long.BYTES;
-        readXFromBytesIntermediateInput(bytes, offset, columnBuilder);
+        readXFromBytesIntermediateInput(binary, offset, columnBuilder);
         updateLongResult(longMaxVal, columnBuilder.build(), 0);
         break;
       case FLOAT:
-        float floatMaxVal = BytesUtils.bytesToFloat(bytes, offset);
+        float floatMaxVal = BinaryUtils.binaryToFloat(binary, offset);
         offset += Float.BYTES;
-        readXFromBytesIntermediateInput(bytes, offset, columnBuilder);
+        readXFromBytesIntermediateInput(binary, offset, columnBuilder);
         updateFloatResult(floatMaxVal, columnBuilder.build(), 0);
         break;
       case DOUBLE:
-        double doubleMaxVal = BytesUtils.bytesToDouble(bytes, offset);
+        double doubleMaxVal = BinaryUtils.binaryToDouble(binary, offset);
         offset += Long.BYTES;
-        readXFromBytesIntermediateInput(bytes, offset, columnBuilder);
+        readXFromBytesIntermediateInput(binary, offset, columnBuilder);
         updateDoubleResult(doubleMaxVal, columnBuilder.build(), 0);
         break;
       case STRING:
       case TEXT:
       case BLOB:
-        int length = BytesUtils.bytesToInt(bytes, offset);
+        int length = BinaryUtils.binaryToInt(binary, offset);
         offset += Integer.BYTES;
-        Binary binaryMaxVal = new Binary(BytesUtils.subBytes(bytes, offset, length));
+        Binary binaryMaxVal = BinaryUtils.subBinary(binary, offset, length);
         offset += length;
-        readXFromBytesIntermediateInput(bytes, offset, columnBuilder);
+        readXFromBytesIntermediateInput(binary, offset, columnBuilder);
         updateBinaryResult(binaryMaxVal, columnBuilder.build(), 0);
         break;
       case BOOLEAN:
-        boolean booleanMaxVal = BytesUtils.bytesToBool(bytes, offset);
+        boolean booleanMaxVal = BinaryUtils.binaryToBool(binary, offset);
         offset += 1;
-        readXFromBytesIntermediateInput(bytes, offset, columnBuilder);
+        readXFromBytesIntermediateInput(binary, offset, columnBuilder);
         updateBooleanResult(booleanMaxVal, columnBuilder.build(), 0);
         break;
       default:
@@ -397,8 +398,8 @@ public abstract class TableMaxMinByBaseAccumulator implements TableAccumulator {
   }
 
   private void readXFromBytesIntermediateInput(
-      byte[] bytes, int offset, ColumnBuilder columnBuilder) {
-    boolean isXNull = BytesUtils.bytesToBool(bytes, offset);
+      Binary binary, int offset, ColumnBuilder columnBuilder) {
+    boolean isXNull = BinaryUtils.binaryToBool(binary, offset);
     offset += 1;
     if (isXNull) {
       columnBuilder.appendNull();
@@ -406,27 +407,27 @@ public abstract class TableMaxMinByBaseAccumulator implements TableAccumulator {
       switch (xDataType) {
         case INT32:
         case DATE:
-          columnBuilder.writeInt(BytesUtils.bytesToInt(bytes, offset));
+          columnBuilder.writeInt(BinaryUtils.binaryToInt(binary, offset));
           break;
         case INT64:
         case TIMESTAMP:
-          columnBuilder.writeLong(BytesUtils.bytesToLongFromOffset(bytes, 8, offset));
+          columnBuilder.writeLong(BinaryUtils.binaryToLongFromOffset(binary, 8, offset));
           break;
         case FLOAT:
-          columnBuilder.writeFloat(BytesUtils.bytesToFloat(bytes, offset));
+          columnBuilder.writeFloat(BinaryUtils.binaryToFloat(binary, offset));
           break;
         case DOUBLE:
-          columnBuilder.writeDouble(BytesUtils.bytesToDouble(bytes, offset));
+          columnBuilder.writeDouble(BinaryUtils.binaryToDouble(binary, offset));
           break;
         case TEXT:
         case STRING:
         case BLOB:
-          int length = BytesUtils.bytesToInt(bytes, offset);
+          int length = BinaryUtils.binaryToInt(binary, offset);
           offset += Integer.BYTES;
-          columnBuilder.writeBinary(new Binary(BytesUtils.subBytes(bytes, offset, length)));
+          columnBuilder.writeBinary(BinaryUtils.subBinary(binary, offset, length));
           break;
         case BOOLEAN:
-          columnBuilder.writeBoolean(BytesUtils.bytesToBool(bytes, offset));
+          columnBuilder.writeBoolean(BinaryUtils.binaryToBool(binary, offset));
           break;
         default:
           throw new UnSupportedDataTypeException(

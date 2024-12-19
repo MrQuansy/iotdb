@@ -33,7 +33,8 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
-import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.BinaryUtils;
+import org.apache.tsfile.utils.Pair;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
 
@@ -198,39 +199,39 @@ public class GroupedFirstAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
-      long time = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, 0);
+      Binary binary = argument.getBinary(i);
+      long time = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, 0);
       int offset = Long.BYTES;
 
       switch (seriesDataType) {
         case INT32:
         case DATE:
-          int intVal = BytesUtils.bytesToInt(bytes, offset);
+          int intVal = BinaryUtils.binaryToInt(binary, offset);
           updateIntValue(groupIds[i], intVal, time);
           break;
         case INT64:
         case TIMESTAMP:
-          long longVal = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long longVal = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           updateLongValue(groupIds[i], longVal, time);
           break;
         case FLOAT:
-          float floatVal = BytesUtils.bytesToFloat(bytes, offset);
+          float floatVal = BinaryUtils.binaryToFloat(binary, offset);
           updateFloatValue(groupIds[i], floatVal, time);
           break;
         case DOUBLE:
-          double doubleVal = BytesUtils.bytesToDouble(bytes, offset);
+          double doubleVal = BinaryUtils.binaryToDouble(binary, offset);
           updateDoubleValue(groupIds[i], doubleVal, time);
           break;
         case TEXT:
         case BLOB:
         case STRING:
-          int length = BytesUtils.bytesToInt(bytes, offset);
+          int length = BinaryUtils.binaryToInt(binary, offset);
           offset += Integer.BYTES;
-          Binary binaryVal = new Binary(BytesUtils.subBytes(bytes, offset, length));
+          Binary binaryVal = BinaryUtils.subBinary(binary, offset, length);
           updateBinaryValue(groupIds[i], binaryVal, time);
           break;
         case BOOLEAN:
-          boolean boolVal = BytesUtils.bytesToBool(bytes, offset);
+          boolean boolVal = BinaryUtils.binaryToBool(binary, offset);
           updateBooleanValue(groupIds[i], boolVal, time);
           break;
         default:
@@ -355,11 +356,11 @@ public class GroupedFirstAccumulator implements GroupedAccumulator {
       case TEXT:
       case BLOB:
       case STRING:
-        byte[] values = binaryValues.get(groupId).getValuesAndLength().left;
-        length += Integer.BYTES + values.length;
+        Pair<byte[], Integer> binaryPair = binaryValues.get(groupId).getValuesAndLength();
+        length += Integer.BYTES + binaryPair.right;
         bytes = new byte[length];
         longToBytes(minTimes.get(groupId), bytes, 0);
-        System.arraycopy(values, 0, bytes, length - values.length, values.length);
+        System.arraycopy(binaryPair.left, 0, bytes, length - binaryPair.right, binaryPair.right);
         return bytes;
       case BOOLEAN:
         length++;

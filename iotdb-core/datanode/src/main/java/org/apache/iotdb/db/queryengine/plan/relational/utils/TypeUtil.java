@@ -326,9 +326,9 @@ public class TypeUtil {
         byte[] leftValue = new byte[leftLength];
 
         Binary rightBinary = column.getBinary(position);
-        byte[] rightValue = rightBinary.getValuesAndLength().left;
+        Pair<byte[], Integer> rightValuePair = rightBinary.getValuesAndLength();
 
-        if (leftLength != rightBinary.getLength()) {
+        if (leftLength != rightValuePair.right) {
           return false;
         }
 
@@ -339,7 +339,7 @@ public class TypeUtil {
           System.arraycopy(variableChunk, variableSizeOffset, leftValue, 0, leftLength);
         }
         return BytesUtils.byteArrayEquals(
-            leftValue, leftValue.length, rightValue, rightBinary.getLength());
+            leftValue, leftValue.length, rightValuePair.left, rightValuePair.right);
       default:
         throw new UnsupportedOperationException();
     }

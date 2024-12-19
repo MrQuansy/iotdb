@@ -27,6 +27,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
@@ -97,10 +98,8 @@ public class AvgAccumulator implements TableAccumulator {
       }
 
       initResult = true;
-      long midCountValue =
-          BytesUtils.bytesToLong(argument.getBinary(i).getValuesAndLength().left, 8);
-      double midSumValue =
-          BytesUtils.bytesToDouble(argument.getBinary(i).getValuesAndLength().left, 8);
+      long midCountValue = BinaryUtils.binaryToLong(argument.getBinary(i), 8);
+      double midSumValue = BinaryUtils.binaryToDouble(argument.getBinary(i), 8);
       countValue += midCountValue;
       sumValue += midSumValue;
     }

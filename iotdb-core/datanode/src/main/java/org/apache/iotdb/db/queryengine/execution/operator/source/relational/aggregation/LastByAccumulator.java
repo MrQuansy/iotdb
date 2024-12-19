@@ -28,7 +28,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
-import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.utils.TsPrimitiveType;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
@@ -122,10 +122,10 @@ public class LastByAccumulator implements TableAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
-      long curTime = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, 0);
+      Binary binary = argument.getBinary(i);
+      long curTime = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, 0);
       int offset = Long.BYTES;
-      boolean isXNull = BytesUtils.bytesToBool(bytes, offset);
+      boolean isXNull = BinaryUtils.binaryToBool(binary, offset);
       offset += 1;
 
       if (isXNull) {
@@ -140,32 +140,32 @@ public class LastByAccumulator implements TableAccumulator {
       switch (xDataType) {
         case INT32:
         case DATE:
-          int xIntVal = BytesUtils.bytesToInt(bytes, offset);
+          int xIntVal = BinaryUtils.binaryToInt(binary, offset);
           updateIntLastValue(xIntVal, curTime);
           break;
         case INT64:
         case TIMESTAMP:
-          long longVal = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long longVal = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           updateLongLastValue(longVal, curTime);
           break;
         case FLOAT:
-          float floatVal = BytesUtils.bytesToFloat(bytes, offset);
+          float floatVal = BinaryUtils.binaryToFloat(binary, offset);
           updateFloatLastValue(floatVal, curTime);
           break;
         case DOUBLE:
-          double doubleVal = BytesUtils.bytesToDouble(bytes, offset);
+          double doubleVal = BinaryUtils.binaryToDouble(binary, offset);
           updateDoubleLastValue(doubleVal, curTime);
           break;
         case TEXT:
         case BLOB:
         case STRING:
-          int length = BytesUtils.bytesToInt(bytes, offset);
+          int length = BinaryUtils.binaryToInt(binary, offset);
           offset += Integer.BYTES;
-          Binary binaryVal = new Binary(BytesUtils.subBytes(bytes, offset, length));
+          Binary binaryVal = BinaryUtils.subBinary(binary, offset, length);
           updateBinaryLastValue(binaryVal, curTime);
           break;
         case BOOLEAN:
-          boolean boolVal = BytesUtils.bytesToBool(bytes, offset);
+          boolean boolVal = BinaryUtils.binaryToBool(binary, offset);
           updateBooleanLastValue(boolVal, curTime);
           break;
         default:

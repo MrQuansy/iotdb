@@ -28,7 +28,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
-import org.apache.tsfile.utils.BytesUtils;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
 
@@ -96,7 +96,7 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
 
     for (int i = 0; i < groupIds.length; i++) {
       if (!argument.isNull(i)) {
-        deserialize(groupIds[i], argument.getBinary(i).getValuesAndLength().left);
+        deserialize(groupIds[i], argument.getBinary(i));
       }
     }
   }
@@ -113,9 +113,9 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void deserialize(int groupId, byte[] bytes) {
-    countValues.add(groupId, BytesUtils.bytesToLong(bytes, Long.BYTES));
-    sumValues.add(groupId, BytesUtils.bytesToDouble(bytes, Long.BYTES));
+  private void deserialize(int groupId, Binary binary) {
+    countValues.add(groupId, BinaryUtils.binaryToLong(binary, Long.BYTES));
+    sumValues.add(groupId, BinaryUtils.binaryToDouble(binary, Long.BYTES));
   }
 
   private byte[] serializeState(int groupId) {

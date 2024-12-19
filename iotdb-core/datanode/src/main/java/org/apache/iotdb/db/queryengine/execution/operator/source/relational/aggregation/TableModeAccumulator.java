@@ -29,6 +29,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.RamUsageEstimator;
 
@@ -38,8 +39,6 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.Utils.UNSUPPORTED_TYPE_MESSAGE;
 import static org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.Utils.serializeBinaryValue;
-import static org.apache.tsfile.utils.BytesUtils.bytesToBool;
-import static org.apache.tsfile.utils.BytesUtils.bytesToLongFromOffset;
 
 public class TableModeAccumulator implements TableAccumulator {
 
@@ -143,8 +142,8 @@ public class TableModeAccumulator implements TableAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
-      deserializeAndMergeCountMap(bytes);
+      Binary binary = argument.getBinary(i);
+      deserializeAndMergeCountMap(binary);
     }
   }
 
@@ -397,22 +396,22 @@ public class TableModeAccumulator implements TableAccumulator {
     return bytes;
   }
 
-  private void deserializeAndMergeCountMap(byte[] bytes) {
+  private void deserializeAndMergeCountMap(Binary binary) {
     int offset = 0;
-    if (bytesToBool(bytes, 0)) {
-      nullCount += bytesToLongFromOffset(bytes, Long.BYTES, 1);
+    if (BinaryUtils.binaryToBool(binary, 0)) {
+      nullCount += BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, 1);
       offset += Long.BYTES;
     }
     offset++;
-    int size = BytesUtils.bytesToInt(bytes, offset);
+    int size = BinaryUtils.binaryToInt(binary, offset);
     offset += 4;
 
     switch (seriesDataType) {
       case BOOLEAN:
         for (int i = 0; i < size; i++) {
-          boolean key = BytesUtils.bytesToBool(bytes, offset);
+          boolean key = BinaryUtils.binaryToBool(binary, offset);
           offset += 1;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, 8, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, 8, offset);
           offset += 8;
           booleanCountMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -420,18 +419,18 @@ public class TableModeAccumulator implements TableAccumulator {
       case INT32:
       case DATE:
         for (int i = 0; i < size; i++) {
-          int key = BytesUtils.bytesToInt(bytes, offset);
+          int key = BinaryUtils.binaryToInt(binary, offset);
           offset += 4;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, 8, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, 8, offset);
           offset += 8;
           intCountMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
         break;
       case FLOAT:
         for (int i = 0; i < size; i++) {
-          float key = BytesUtils.bytesToFloat(bytes, offset);
+          float key = BinaryUtils.binaryToFloat(binary, offset);
           offset += 4;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, 8, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, 8, offset);
           offset += 8;
           floatCountMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -439,18 +438,18 @@ public class TableModeAccumulator implements TableAccumulator {
       case INT64:
       case TIMESTAMP:
         for (int i = 0; i < size; i++) {
-          long key = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long key = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += 8;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, 8, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, 8, offset);
           offset += 8;
           longCountMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
         break;
       case DOUBLE:
         for (int i = 0; i < size; i++) {
-          double key = BytesUtils.bytesToDouble(bytes, offset);
+          double key = BinaryUtils.binaryToDouble(binary, offset);
           offset += 8;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, 8, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, 8, offset);
           offset += 8;
           doubleCountMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -459,11 +458,11 @@ public class TableModeAccumulator implements TableAccumulator {
       case STRING:
       case BLOB:
         for (int i = 0; i < size; i++) {
-          int length = BytesUtils.bytesToInt(bytes, offset);
+          int length = BinaryUtils.binaryToInt(binary, offset);
           offset += 4;
-          Binary binaryVal = new Binary(BytesUtils.subBytes(bytes, offset, length));
+          Binary binaryVal = BinaryUtils.subBinary(binary, offset, length);
           offset += length;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, 8, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, 8, offset);
           offset += 8;
           binaryCountMap.compute(binaryVal, (k, v) -> v == null ? count : v + count);
         }

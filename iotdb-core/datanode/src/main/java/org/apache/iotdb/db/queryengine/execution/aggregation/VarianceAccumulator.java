@@ -24,6 +24,7 @@ import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.file.metadata.statistics.Statistics;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BitMap;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
@@ -86,10 +87,10 @@ public class VarianceAccumulator implements Accumulator {
     if (partialResult[0].isNull(0)) {
       return;
     }
-    byte[] bytes = partialResult[0].getBinary(0).getValuesAndLength().left;
-    long intermediateCount = BytesUtils.bytesToLong(bytes, Long.BYTES);
-    double intermediateMean = BytesUtils.bytesToDouble(bytes, Long.BYTES);
-    double intermediateM2 = BytesUtils.bytesToDouble(bytes, (Long.BYTES + Double.BYTES));
+    Binary binary = partialResult[0].getBinary(0);
+    long intermediateCount = BinaryUtils.binaryToLong(binary, Long.BYTES);
+    double intermediateMean = BinaryUtils.binaryToDouble(binary, Long.BYTES);
+    double intermediateM2 = BinaryUtils.binaryToDouble(binary, (Long.BYTES + Double.BYTES));
 
     long newCount = count + intermediateCount;
     double newMean = ((intermediateCount * intermediateMean) + (count * mean)) / newCount;
@@ -107,10 +108,10 @@ public class VarianceAccumulator implements Accumulator {
       return;
     }
     // Deserialize
-    byte[] bytes = input[0].getBinary(0).getValuesAndLength().left;
-    long intermediateCount = BytesUtils.bytesToLong(bytes, Long.BYTES);
-    double intermediateMean = BytesUtils.bytesToDouble(bytes, Long.BYTES);
-    double intermediateM2 = BytesUtils.bytesToDouble(bytes, (Long.BYTES + Double.BYTES));
+    Binary binary = input[0].getBinary(0);
+    long intermediateCount = BinaryUtils.binaryToLong(binary, Long.BYTES);
+    double intermediateMean = BinaryUtils.binaryToDouble(binary, Long.BYTES);
+    double intermediateM2 = BinaryUtils.binaryToDouble(binary, (Long.BYTES + Double.BYTES));
     // Remove from state
     long newCount = count - intermediateCount;
     double newMean = ((count * mean) - (intermediateCount * intermediateMean)) / newCount;

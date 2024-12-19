@@ -30,6 +30,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.write.UnSupportedDataTypeException;
@@ -105,10 +106,10 @@ public class GroupedVarianceAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
-      long intermediateCount = BytesUtils.bytesToLong(bytes, Long.BYTES);
-      double intermediateMean = BytesUtils.bytesToDouble(bytes, Long.BYTES);
-      double intermediateM2 = BytesUtils.bytesToDouble(bytes, (Long.BYTES + Double.BYTES));
+      Binary binary = argument.getBinary(i);
+      long intermediateCount = BinaryUtils.binaryToLong(binary, Long.BYTES);
+      double intermediateMean = BinaryUtils.binaryToDouble(binary, Long.BYTES);
+      double intermediateM2 = BinaryUtils.binaryToDouble(binary, Long.BYTES + Double.BYTES);
 
       long newCount = counts.get(groupIds[i]) + intermediateCount;
       double newMean =

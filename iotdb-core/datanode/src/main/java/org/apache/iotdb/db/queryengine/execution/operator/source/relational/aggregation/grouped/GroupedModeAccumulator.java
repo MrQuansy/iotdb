@@ -30,6 +30,7 @@ import org.apache.tsfile.read.common.block.column.BinaryColumn;
 import org.apache.tsfile.read.common.block.column.BinaryColumnBuilder;
 import org.apache.tsfile.read.common.block.column.RunLengthEncodedColumn;
 import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.BinaryUtils;
 import org.apache.tsfile.utils.BytesUtils;
 import org.apache.tsfile.utils.RamUsageEstimator;
 import org.apache.tsfile.utils.TsPrimitiveType;
@@ -40,8 +41,6 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.Utils.UNSUPPORTED_TYPE_MESSAGE;
 import static org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.Utils.serializeBinaryValue;
-import static org.apache.tsfile.utils.BytesUtils.bytesToBool;
-import static org.apache.tsfile.utils.BytesUtils.bytesToLongFromOffset;
 import static org.apache.tsfile.utils.TsPrimitiveType.getByType;
 
 public class GroupedModeAccumulator implements GroupedAccumulator {
@@ -115,8 +114,8 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
         continue;
       }
 
-      byte[] bytes = argument.getBinary(i).getValuesAndLength().left;
-      deserializeAndMergeCountMap(groupIds[i], bytes);
+      Binary binary = argument.getBinary(i);
+      deserializeAndMergeCountMap(groupIds[i], binary);
     }
   }
 
@@ -299,14 +298,14 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
     return bytes;
   }
 
-  private void deserializeAndMergeCountMap(int groupId, byte[] bytes) {
+  private void deserializeAndMergeCountMap(int groupId, Binary binary) {
     int offset = 0;
-    if (bytesToBool(bytes, 0)) {
-      nullCounts.add(groupId, bytesToLongFromOffset(bytes, Long.BYTES, 1));
+    if (BinaryUtils.binaryToBool(binary, 0)) {
+      nullCounts.add(groupId, BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, 1));
       offset += Long.BYTES;
     }
     offset++;
-    int size = BytesUtils.bytesToInt(bytes, offset);
+    int size = BinaryUtils.binaryToInt(binary, offset);
     offset += Integer.BYTES;
 
     HashMap<TsPrimitiveType, Long> countMap = countMaps.get(groupId);
@@ -314,9 +313,10 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
     switch (seriesDataType) {
       case BOOLEAN:
         for (int i = 0; i < size; i++) {
-          TsPrimitiveType key = new TsPrimitiveType.TsBoolean(bytesToBool(bytes, offset));
+          TsPrimitiveType key =
+              new TsPrimitiveType.TsBoolean(BinaryUtils.binaryToBool(binary, offset));
           offset += 1;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += Long.BYTES;
           countMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -324,18 +324,19 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
       case INT32:
       case DATE:
         for (int i = 0; i < size; i++) {
-          TsPrimitiveType key = new TsPrimitiveType.TsInt(BytesUtils.bytesToInt(bytes, offset));
+          TsPrimitiveType key = new TsPrimitiveType.TsInt(BinaryUtils.binaryToInt(binary, offset));
           offset += Integer.BYTES;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += Long.BYTES;
           countMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
         break;
       case FLOAT:
         for (int i = 0; i < size; i++) {
-          TsPrimitiveType key = new TsPrimitiveType.TsFloat(BytesUtils.bytesToFloat(bytes, offset));
+          TsPrimitiveType key =
+              new TsPrimitiveType.TsFloat(BinaryUtils.binaryToFloat(binary, offset));
           offset += Float.BYTES;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += Long.BYTES;
           countMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -345,9 +346,9 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
         for (int i = 0; i < size; i++) {
           TsPrimitiveType key =
               new TsPrimitiveType.TsLong(
-                  BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset));
+                  BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset));
           offset += Long.BYTES;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += Long.BYTES;
           countMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -355,9 +356,9 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
       case DOUBLE:
         for (int i = 0; i < size; i++) {
           TsPrimitiveType key =
-              new TsPrimitiveType.TsDouble(BytesUtils.bytesToDouble(bytes, offset));
+              new TsPrimitiveType.TsDouble(BinaryUtils.binaryToDouble(binary, offset));
           offset += Double.BYTES;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += Long.BYTES;
           countMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
@@ -366,12 +367,12 @@ public class GroupedModeAccumulator implements GroupedAccumulator {
       case STRING:
       case BLOB:
         for (int i = 0; i < size; i++) {
-          int length = BytesUtils.bytesToInt(bytes, offset);
+          int length = BinaryUtils.binaryToInt(binary, offset);
           offset += Integer.BYTES;
           TsPrimitiveType key =
-              new TsPrimitiveType.TsBinary(new Binary(BytesUtils.subBytes(bytes, offset, length)));
+              new TsPrimitiveType.TsBinary(BinaryUtils.subBinary(binary, offset, length));
           offset += length;
-          long count = BytesUtils.bytesToLongFromOffset(bytes, Long.BYTES, offset);
+          long count = BinaryUtils.binaryToLongFromOffset(binary, Long.BYTES, offset);
           offset += Long.BYTES;
           countMap.compute(key, (k, v) -> v == null ? count : v + count);
         }
